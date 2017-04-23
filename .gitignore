@@ -1,0 +1,12 @@
+
+# visual studio
+*.csproj
+*.user
+*.sln
+*.suo
+obj/
+bin/
+
+# executables
+*.bat
+*.exe
