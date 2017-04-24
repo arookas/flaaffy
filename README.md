@@ -100,6 +100,7 @@ The arguments are as follows:
 |---------|-----------|
 |-input _&lt;file&gt;_ _&lt;format&gt;_|Specifies the path and filename to the input file. _&lt;format&gt;_ specifies what format the data is in and may be one of formats listed above.|
 |-output _&lt;file&gt;_ _&lt;format&gt;_|Specifies the path and filename to the output file. _&lt;format&gt;_ specifies what format to which to convert the data and may be one of formats listed above.|
+|-sample-count _&lt;count&gt;_|The number of samples to convert. This is required and does not have to be a multiple of 16.|
 
 #### cotton
 
