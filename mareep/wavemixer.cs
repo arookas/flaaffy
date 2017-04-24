@@ -315,6 +315,7 @@ namespace arookas {
 				switch (id) {
 					case "fmt ": fmt = true; LoadFmtBlock(size); break;
 					case "data": data = true; LoadDataBlock(size); break;
+					case "LIST": mareep.WriteWarning("WAV: skipping list '{0}'.\n", mReader.ReadString(4)); break;
 					default: mareep.WriteWarning("WAV: unknown chunk '{0}'.\n", id); break;
 				}
 
