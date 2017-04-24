@@ -11,6 +11,7 @@ namespace arookas {
 	[Performer(Action.Whap)]
 	class WhapPerformer : InputOutputPerformer {
 
+		WaveMixerMode mMixerMode;
 		string mWaveOutput;
 
 		public override void LoadParams(string[] arguments) {
@@ -19,7 +20,7 @@ namespace arookas {
 			aCommandLineParameter param;
 			var cmdline = new aCommandLine(arguments);
 
-			param = cmdline.LastOrDefault(p => p.Name.Equals("-wave-dir", StringComparison.InvariantCultureIgnoreCase));
+			param = mareep.GetLastCmdParam(cmdline, "-wave-dir");
 
 			if (param == null) {
 				mWaveOutput = "waves/";
@@ -27,6 +28,16 @@ namespace arookas {
 				mareep.WriteError("Bad -wave-dir parameter.");
 			} else {
 				mWaveOutput = param[0];
+			}
+
+			param = mareep.GetLastCmdParam(cmdline, "-mix-mode");
+
+			if (param == null) {
+				mMixerMode = WaveMixerMode.Mix;
+			} else if (param.Count != 1) {
+				mareep.WriteError("Bad -mix-mode parameter.");
+			} else if (!Enum.TryParse(param[0], true, out mMixerMode)) {
+				mareep.WriteError("Unknown mix mode '{0}'.", param[0]);
 			}
 		}
 
@@ -133,13 +144,16 @@ namespace arookas {
 							WaveMixer mixer = null;
 
 							switch (extension) {
-								case ".wav": mixer = new MicrosoftWaveMixer(instream, wave); break;
-								case ".raw": mixer = new RawWaveMixer(instream, wave, wave.Format, wave.SampleCount); break;
+								case ".wav": mixer = new MicrosoftWaveMixer(instream); break;
+								case ".raw": mixer = new RawWaveMixer(instream, wave.Format, wave.SampleCount); break;
 							}
 
 							if (mixer == null) {
 								mareep.WriteError("Could not create wave mixer (unsupported file extension '{0}').", extension);
 							}
+
+							mixer.MixerMode = mMixerMode;
+							mixer.CopyWaveInfo(wave);
 
 							switch (wave.Format) {
 								case WaveFormat.Pcm8: mixer.WritePcm8(writer); break;
@@ -164,7 +178,6 @@ namespace arookas {
 			foreach (var waveGroup in waveBank) {
 				var archiveFileName = Path.Combine(Path.GetDirectoryName(mInputFile), waveGroup.ArchiveFileName);
 				var outputDirectory = Path.Combine(Path.GetDirectoryName(mOutputFile), mWaveOutput);
-				var waveid = 0;
 
 				mareep.WriteMessage("{0}\n", waveGroup.ArchiveFileName);
 
@@ -172,7 +185,7 @@ namespace arookas {
 					var reader = CreateBigBinaryInput(instream);
 
 					foreach (var wave in waveGroup) {
-						var waveFileName = String.Format("group_{0}_wave_{1:D6}.raw", waveGroup.ArchiveFileName, waveid++);
+						var waveFileName = String.Format("{0}_{1:D5}.{2}.raw", waveGroup.ArchiveFileName, wave.WaveId, wave.Format.ToString().ToLowerInvariant());
 						wave.FileName = Path.Combine(mWaveOutput, waveFileName);
 
 						// make sure directory exists
@@ -563,8 +576,8 @@ namespace arookas {
 				writer.WriteS32(wave.Loop ? wave.LoopStart : 0);
 				writer.WriteS32(wave.Loop ? wave.LoopEnd : 0);
 				writer.WriteS32(wave.SampleCount);
-				writer.WriteS16(0); // unknown
-				writer.WriteS16(0); // unknown
+				writer.WriteS16(0); // unused
+				writer.WriteS16(0); // unused
 				writer.Write32(0); // runtime (load-flag pointer)
 				writer.Write32(0x1D8); // unknown
 			}
