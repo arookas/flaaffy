@@ -42,7 +42,7 @@ The available actions are as follows:
 
 #### shock
 
-The _shock_ action between binary and XML banks.
+The _shock_ action converts between binary and XML banks.
 The binary format is the standard "IBNK" (or "bnk") format used in Super Mario Sunshine.
 Both big endian and little endian are supported.
 The XML format is a basic, XML-based representation of the binary format.
@@ -57,7 +57,7 @@ The arguments are as follows:
 
 #### whap
 
-The _whap_ action between binary and XML banks.
+The _whap_ action converts between binary and XML wave banks.
 The binary format is the standard "WSYS" (or "ws") format used in Super Mario Sunshine.
 Both big endian and little endian are supported.
 The XML format is a basic, XML-based representation of the binary format.
@@ -72,7 +72,7 @@ The arguments are as follows:
 
 The available stereo-mixing modes are as follows:
 
-|Mix mode|Description|
+|Mix Mode|Description|
 |--------|-----------|
 |mix|Mixes both channels together to create a mono wave.|
 |left|Converts only the left stereo channel.|
@@ -83,6 +83,7 @@ The available stereo-mixing modes are as follows:
 #### wave
 
 The _wave_ action converts among the various raw-audio formats used by Super Mario Sunshine.
+As a convenience, it can also convert to&#8209;and&#8209;fro .wav files.
 The available formats are:
 
 |Format|Frame Size|Description|
@@ -94,13 +95,22 @@ The available formats are:
 
 > **Note:** sizes are measured in bytes per frame (i.e. 16 samples). All formats are mono. The ADPCM formats use a hardcoded, two-dimensional coefficient table. If you are unsure which to use when importing a sound into the game, go with ADPCM4.
 
-The arguments are as follows:
+The command-line arguments depending on the input and output formats.
+The arguments for the input formats are as follows:
 
-|Parameter|Description|
-|---------|-----------|
-|-input _&lt;file&gt;_ _&lt;format&gt;_|Specifies the path and filename to the input file. _&lt;format&gt;_ specifies what format the data is in and may be one of formats listed above.|
-|-output _&lt;file&gt;_ _&lt;format&gt;_|Specifies the path and filename to the output file. _&lt;format&gt;_ specifies what format to which to convert the data and may be one of formats listed above.|
-|-sample-count _&lt;count&gt;_|The number of samples to convert. This is required and does not have to be a multiple of 16.|
+|Format|Arguments|Description|
+|------|---------|-----------|
+|.raw|-input _&lt;file&gt;_ _&lt;format&gt;_ _&lt;sample&#8209;count&gt;_|The file extension must be .raw. _format_ may be one of the raw-audio formats listed above.|
+|.wav|-input _&lt;file&gt;_ _&lt;mix&#8209;mode&gt;_|The file extension must be .wav. _mix&#8209;mode_ specifies the stereo-audio mixing behavior and are the same modes as for the _whap_ action above.|
+
+The arguments for the output formats are as follows:
+
+|Format|Arguments|Description|
+|------|---------|-----------|
+|.raw|-output _&lt;file&gt;_ _&lt;format&gt;_|The file extension must be .raw. _format_ may be one of the raw-audio formats listed above.|
+|.wav|-output _&lt;file&gt;_ _&lt;sample&#8209;rate&gt;_|The file extension must be .wav. _sample&#8209;rate_ is measured in hertz and specifies the sample rate to assign the .wav file.|
+
+> **Note:** when converting to a .wav file, the output format will always be 16-bit mono LPCM.
 
 #### cotton
 
