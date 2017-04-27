@@ -451,6 +451,79 @@ namespace arookas {
 			return 0;
 		}
 
+		public void ReadPcm8(int sample, out sbyte pcm8) {
+			if (sample < 0 || sample >= mSampleCount) {
+				throw new ArgumentOutOfRangeException("sample");
+			}
+
+			GotoSample(sample);
+			pcm8 = MixPcm8();
+		}
+		public void ReadPcm8(int sample, out sbyte left, out sbyte right) {
+			if (sample < 0 || sample >= mSampleCount) {
+				throw new ArgumentOutOfRangeException("sample");
+			}
+
+			GotoSample(sample);
+
+			if (mChannelCount == 1) {
+				sbyte pcm8;
+
+				if (mBitDepth == 8) {
+					pcm8 = ReadPcm8();
+				} else {
+					Waveform.Pcm16toPcm8(ReadPcm16(), out pcm8);
+				}
+
+				left = pcm8;
+				right = pcm8;
+			} else {
+				if (mBitDepth == 8) {
+					left = ReadPcm8();
+					right = ReadPcm8();
+				} else {
+					Waveform.Pcm16toPcm8(ReadPcm16(), out left);
+					Waveform.Pcm16toPcm8(ReadPcm16(), out right);
+				}
+			}
+		}
+		public void ReadPcm16(int sample, out short pcm16) {
+			if (sample < 0 || sample >= mSampleCount) {
+				throw new ArgumentOutOfRangeException("sample");
+			}
+
+			GotoSample(sample);
+			pcm16 = MixPcm16();
+		}
+		public void ReadPcm16(int sample, out short left, out short right) {
+			if (sample < 0 || sample >= mSampleCount) {
+				throw new ArgumentOutOfRangeException("sample");
+			}
+
+			GotoSample(sample);
+
+			if (mChannelCount == 1) {
+				short pcm16;
+
+				if (mBitDepth == 16) {
+					pcm16 = ReadPcm16();
+				} else {
+					Waveform.Pcm8toPcm16(ReadPcm8(), out pcm16);
+				}
+
+				left = pcm16;
+				right = pcm16;
+			} else {
+				if (mBitDepth == 16) {
+					left = ReadPcm16();
+					right = ReadPcm16();
+				} else {
+					Waveform.Pcm8toPcm16(ReadPcm8(), out left);
+					Waveform.Pcm8toPcm16(ReadPcm8(), out right);
+				}
+			}
+		}
+
 		public override void WritePcm8(aBinaryWriter writer) {
 			for (var i = 0; i < mSampleCount; ++i) {
 				GotoSample(i);
