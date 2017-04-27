@@ -88,29 +88,50 @@ The available formats are:
 
 |Format|Frame Size|Description|
 |------|:--------:|-----------|
-|PCM8|16b|Linear, 8-bit PCM, signed.|
-|PCM16|32b|Linear, 16-bit PCM, signed.|
-|ADPCM2|5b|Non-linear, 2-bit ADPCM.|
-|ADPCM4|9b|Non-linear, 4-bit ADPCM.|
+|PCM8|16|Linear, 8-bit PCM, signed.|
+|PCM16|32|Linear, 16-bit PCM, signed.|
+|ADPCM2|5|Non-linear, 2-bit ADPCM.|
+|ADPCM4|9|Non-linear, 4-bit ADPCM.|
 
 > **Note:** sizes are measured in bytes per frame (i.e. 16 samples). All formats are mono. The ADPCM formats use a hardcoded, two-dimensional coefficient table. If you are unsure which to use when importing a sound into the game, go with ADPCM4.
 
 The command-line arguments depending on the input and output formats.
-The arguments for the input formats are as follows:
 
-|Format|Arguments|Description|
-|------|---------|-----------|
-|.raw|-input _&lt;file&gt;_ _&lt;format&gt;_ _&lt;sample&#8209;count&gt;_|The file extension must be .raw. _format_ may be one of the raw-audio formats listed above.|
-|.wav|-input _&lt;file&gt;_ _&lt;mix&#8209;mode&gt;_|The file extension must be .wav. _mix&#8209;mode_ specifies the stereo-audio mixing behavior and are the same modes as for the _whap_ action above.|
+|Parameter|Description|
+|---------|-----------|
+|-input _&lt;file&gt;_ [_&lt;format&gt;_]|Specifies the input file. If the file is raw audio, _&lt;format&gt;_ specifies the format of the audio data and is one of the raw-audio formats listed above.|
+|-output &_lt;file&gt;_ [_&lt;format&gt;_]|Specifies the output file. If the file is raw audio, _&lt;format&gt;_ specifies the format of the audio data and is one of theraw-audio formats listed above.|
+|-sample-count _&lt;count&gt;_|Number of samples to convert. Used only if the input file is raw audio.|
+|-sample-rate _&lt;rate&gt;_|Rate, in hertz, of the raw audio data. Used only when converting raw audio data to a WAV file.|
+|-loop _&lt;start&gt;_|Enables looping and specifies which sample to which to loop back when hitting the end of the stream. Used only when creating streams. If omitted, the stream will not loop.|
+|-mix-mode _&lt;mode&gt;_|Specifies how to mix stereo input down to mono. Used only when converting stereo WAV files to raw audio. Available modes are listed below. Defaults to _mix_.|
 
-The arguments for the output formats are as follows:
+The available stereo-mixing modes are as follows:
 
-|Format|Arguments|Description|
-|------|---------|-----------|
-|.raw|-output _&lt;file&gt;_ _&lt;format&gt;_|The file extension must be .raw. _format_ may be one of the raw-audio formats listed above.|
-|.wav|-output _&lt;file&gt;_ _&lt;sample&#8209;rate&gt;_|The file extension must be .wav. _sample&#8209;rate_ is measured in hertz and specifies the sample rate to assign the .wav file.|
+|Mix Mode|Description|
+|--------|-----------|
+|mix|Mixes both channels together to create a mono wave.|
+|left|Converts only the left stereo channel.|
+|right|Converts only the right stereo channel.|
 
-> **Note:** when converting to a .wav file, the output format will always be 16-bit mono LPCM.
+The formats of the input and output files are determined by the extension and must one of the following:
+
+|Extension|Description|
+|---------|-----------|
+|.raw|Raw, mono audio data. Must be one of the raw-audio formats listed above. Format is specified after the filename in the command line.|
+|.wav|Microsoft audio data container. Only mono or stereo LPCM of bitdepths 8 or 16 are supported.|
+|.afc|Stereo ADPCM audio stream. Supports loop points.|
+
+Only the following conversions are supported:
+
+- .raw&nbsp;⇒&nbsp;.raw
+- .raw&nbsp;⇒&nbsp;.wav
+- .wav&nbsp;⇒&nbsp;.raw
+- .wav&nbsp;⇒&nbsp;.afc
+- .afc&nbsp;⇒&nbsp;.wav
+
+> **Note:** when converting raw audio to a WAV file, the output format will always be 16-bit mono LPCM.
+> When converting a stream to wav a WAV file, the output format will always be 16-bit stereo LPCM.
 
 #### cotton
 
