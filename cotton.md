@@ -35,8 +35,8 @@ When the value is too large to fit an argument to a command or directive, the un
 |----|----------|----|-----------|
 |Int8|`b`|1b|Simple, 8-bit integer. May be 0&#8209;255 or -128&#8209;127.|
 |Half16|`s`|1b|An 8-bit signed integer scaled up to 16 bits. Value may be -128&#8209;127.|
-|Int16|`h`|2b|Simple, 16-bit integer. May be 0&#8209;65,535 or -32768&#8209;32,767.|
-|Int24|`q`|3b|Simple, 24-bit integer. May be 0&#8209;16,777,215 or -8388608&#8209;8,388,607.|
+|Int16|`h`|2b|Simple, 16-bit integer. May be 0&#8209;65,535 or -32,768&#8209;32,767.|
+|Int24|`q`|3b|Simple, 24-bit integer. May be 0&#8209;16,777,215 or -8,388,608&#8209;8,388,607.|
 |Int32|`w`|4b|Simple, 32-bit integer. May be 0&#8209;4,294,967,295 or -2,147,483,648&#8209;2,147,483,647.|
 
 Numbers may also be specified in hexadecimal, rather than decimal.
@@ -46,7 +46,7 @@ Preceeding the first digit (but after the negative sign) with a dollar sign `$` 
 .int16 0 # the smallest fitting type is used, in this case int8
 .int8 16s # fits in 8 bits but scaled to 16 bits, in this case 4128h
 .int8 $140 # 320 in decimal, truncated to 64 to fit in 8 bits
-.int24 -$10 # hexadecimals may be negative as well (does not perform bitwise-NOT)
+.int24 -$10 # hexadecimal immediates may be negative as well (does not perform bitwise-NOT)
 ```
 
 You may also specify a MIDI note name (`C-0 through G-10`) instead of the 8-bit values 0&#8209;127.
@@ -60,7 +60,7 @@ noteon 60, 127, 1
 
 #### Registers
 
-There are 43 register parameters available on every track, able to be accessed by name.
+There are 43 register parameters available on every track, each accessed by name.
 The indices range from 0&#8209;13, 32&#8209;35, 40&#8209;48, and 64&#8209;79.
 Indices outside these ranges will result in undefined behavior.
 Each register's name is a lowercase `r`, followed by the register number in decimal.
