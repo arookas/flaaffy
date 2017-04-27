@@ -119,7 +119,7 @@ load rprogram, PROGRAM
 
 # the following command will use the new value
 # the commands before will still use the old value
-load program, PROGRAM
+load rprogram, PROGRAM
 ```
 
 #### Labels
