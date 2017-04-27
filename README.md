@@ -82,9 +82,8 @@ The available stereo-mixing modes are as follows:
 
 #### wave
 
-The _wave_ action converts among the various raw-audio formats used by Super Mario Sunshine.
-As a convenience, it can also convert to&#8209;and&#8209;fro .wav files.
-The available formats are:
+The _wave_ action converts among the various audio formats used by Super Mario Sunshine.
+The available raw-audio formats are:
 
 |Format|Frame Size|Description|
 |------|:--------:|-----------|
@@ -99,10 +98,11 @@ The command-line arguments depending on the input and output formats.
 
 |Parameter|Description|
 |---------|-----------|
-|-input _&lt;file&gt;_ [_&lt;format&gt;_]|Specifies the input file. If the file is raw audio, _&lt;format&gt;_ specifies the format of the audio data and is one of the raw-audio formats listed above.|
-|-output &_lt;file&gt;_ [_&lt;format&gt;_]|Specifies the output file. If the file is raw audio, _&lt;format&gt;_ specifies the format of the audio data and is one of theraw-audio formats listed above.|
+|-input _&lt;file&gt;_ [_&lt;format&gt;_]|Specifies the input file. If the file is raw audio, _&lt;format&gt;_ specifies the format of the audio data; see below for the available values.|
+|-output &_lt;file&gt;_ [_&lt;format&gt;_]|Specifies the output file. If the file is raw audio, _&lt;format&gt;_ specifies the format of the audio data; see below for the available values.|
 |-sample-count _&lt;count&gt;_|Number of samples to convert. Used only if the input file is raw audio.|
 |-sample-rate _&lt;rate&gt;_|Rate, in hertz, of the raw audio data. Used only when converting raw audio data to a WAV file.|
+|-frame-rate _&lt;rate&gt;_|Specifies the frame rate of the stream. Used only when creating streams. If omitted, the frame rate defaults to 30.|
 |-loop _&lt;start&gt;_|Enables looping and specifies which sample to which to loop back when hitting the end of the stream. Used only when creating streams. If omitted, the stream will not loop.|
 |-mix-mode _&lt;mode&gt;_|Specifies how to mix stereo input down to mono. Used only when converting stereo WAV files to raw audio. Available modes are listed below. Defaults to _mix_.|
 
@@ -118,9 +118,9 @@ The formats of the input and output files are determined by the extension and mu
 
 |Extension|Description|
 |---------|-----------|
-|.raw|Raw, mono audio data. Must be one of the raw-audio formats listed above. Format is specified after the filename in the command line.|
-|.wav|Microsoft audio data container. Only mono or stereo LPCM of bitdepths 8 or 16 are supported.|
-|.afc|Stereo ADPCM audio stream. Supports loop points.|
+|.raw|Raw, mono audio data. Must be one of the raw-audio formats listed above. _&lt;format&gt;_ is required and is one of the raw-audio formats listed above.|
+|.wav|Microsoft audio data container. Only mono or stereo LPCM of bitdepths 8 or 16 are supported. _&lt;format&gt;_ is ignored.|
+|.afc|Stereo ADPCM audio stream. Supports loop points. _&lt;format&gt;_ is optional and either _pcm_ or _adpcm_. By default, streams are encoded to ADPCM.|
 
 Only the following conversions are supported:
 
@@ -131,7 +131,7 @@ Only the following conversions are supported:
 - .afc&nbsp;⇒&nbsp;.wav
 
 > **Note:** when converting raw audio to a WAV file, the output format will always be 16-bit mono LPCM.
-> When converting a stream to wav a WAV file, the output format will always be 16-bit stereo LPCM.
+> When converting a stream to a WAV file, the output format will always be 16-bit stereo LPCM.
 
 #### cotton
 
