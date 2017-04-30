@@ -385,7 +385,7 @@ namespace arookas.SequenceAssembler {
 			} else if (line[cursor] == '"') {
 				do {
 					++cursor;
-				} while (cursor < line.Length && line[cursor] != '"' && line[cursor - 1] != '\\');
+				} while (cursor < line.Length && (line[cursor] != '"' || line[cursor - 1] == '\\'));
 				++cursor;
 			} else {
 				while (cursor < line.Length && !Char.IsWhiteSpace(line[cursor]) && line[cursor] != ',') {
@@ -562,7 +562,10 @@ namespace arookas.SequenceAssembler {
 					case 'x': buffer.Append(UnescapeHex(literal, (escape_start + 2), out index)); continue;
 					case 'u': buffer.Append(UnescapeUnicodeCodeUnit(literal, (escape_start + 2), out index)); continue;
 					case 'U': buffer.Append(UnescapeUnicodeSurrogatePair(literal, (escape_start + 2), out index)); continue;
+					default: Error("bad escape in string literal."); break;
 				}
+
+				index = (escape_start + 2);
 			}
 
 			return buffer.ToString();
