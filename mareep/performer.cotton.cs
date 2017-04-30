@@ -53,7 +53,7 @@ namespace arookas.SequenceAssembler {
 
 				using (var outstream = mareep.CreateFile(mOutput)) {
 					var writer = new aBinaryWriter(outstream, mEndianness, Encoding.GetEncoding(932));
-					var asm = new BmsAssembler(reader, writer);
+					var asm = new BmsAssembler(mInput, reader, writer);
 
 					while (asm.ReadLine());
 
@@ -66,29 +66,46 @@ namespace arookas.SequenceAssembler {
 
 	partial class BmsAssembler {
 
-		int mLineNumber;
 		aBinaryWriter mWriter;
-		StreamReader mReader;
+		Stack<Inclusion> mIncludeStack;
+		List<string> mIncludeHistory;
 		Dictionary<string, int> mLabels;
 		Dictionary<string, BmsImmediate> mVariables;
 		List<Relocation> mRelocations;
 
-		public BmsAssembler(StreamReader reader, aBinaryWriter writer) {
-			mReader = reader;
-			mWriter = writer;
+		string Filename { get { return mIncludeStack.Peek().filename; } }
+		StreamReader Reader { get { return mIncludeStack.Peek().reader; } }
+		int LineNumber {
+			get { return mIncludeStack.Peek().line; }
+			set {
+				var inclusion = mIncludeStack.Pop();
+				inclusion.line = value;
+				mIncludeStack.Push(inclusion);
+			}
+		}
+
+		public BmsAssembler(string filename, StreamReader reader, aBinaryWriter writer) {
+			mIncludeStack = new Stack<Inclusion>();
+			mIncludeStack.Push(new Inclusion() { filename = filename, reader = reader, });
+			mIncludeHistory = new List<string>();
 			mLabels = new Dictionary<string, int>();
 			mVariables = new Dictionary<string, BmsImmediate>();
 			mRelocations = new List<Relocation>();
-			mLineNumber = 1;
+			mWriter = writer;
 		}
 
 		public bool ReadLine() {
-			if (mReader.EndOfStream) {
+			while (Reader.EndOfStream && mIncludeStack.Count > 1) {
+				var inclusion = mIncludeStack.Pop();
+				inclusion.reader.Dispose();
+			}
+
+			if (Reader.EndOfStream) {
 				return false;
 			}
 
 			string word;
-			var line = mReader.ReadLine();
+			var line = Reader.ReadLine();
 			var cursor = 0;
 			
 			while (cursor < line.Length) {
@@ -109,48 +126,109 @@ namespace arookas.SequenceAssembler {
 				}
 			}
 
-			++mLineNumber;
+			++LineNumber;
 			return true;
 		}
 		void ReadDirective(string word, string line, ref int cursor) {
 			switch (word) {
+				case ".include": ReadIncludeDirective(line, ref cursor); break;
 				case ".define": ReadDefineDirective(line, ref cursor); break;
+				case ".undefine": ReadUndefineDirective(line, ref cursor); break;
+				case ".undefinelabel": ReadUndefineLabelDirective(line, ref cursor); break;
 				case ".align": ReadAlignDirective(line, ref cursor); break;
-				case ".int8": ReadPodDirective(word, BmsArgumentType.Int8, line, ref cursor); break;
-				case ".int16": ReadPodDirective(word, BmsArgumentType.Int16, line, ref cursor); break;
-				case ".int24": ReadPodDirective(word, BmsArgumentType.Int24, line, ref cursor); break;
-				case ".int32": ReadPodDirective(word, BmsArgumentType.Int32, line, ref cursor); break;
+				case ".int8": ReadPodDirective(BmsArgumentType.Int8, line, ref cursor); break;
+				case ".int16": ReadPodDirective(BmsArgumentType.Int16, line, ref cursor); break;
+				case ".int24": ReadPodDirective(BmsArgumentType.Int24, line, ref cursor); break;
+				case ".int32": ReadPodDirective(BmsArgumentType.Int32, line, ref cursor); break;
 				default: Warning("unknown directive '{0}'.", word); break;
+			}
+		}
+		void ReadIncludeDirective(string line, ref int cursor) {
+			string word;
+
+			if (!GetNextWord(line, ref cursor, out word)) {
+				Warning("missing filename.");
+				return;
+			} else if (GetWordType(word) != BmsWordType.StringLiteral) {
+				Warning("bad filename '{0}'.", word);
+				return;
+			}
+
+			var literal = ReadStringLiteral(word).Value;
+			var filename = Path.Combine(Path.GetDirectoryName(Filename), literal);
+			
+			if (!File.Exists(filename)) {
+				Warning("could not find include file '{0}'.", literal);
+				return;
+			}
+			
+			if (mIncludeHistory.Any(inclusion => inclusion.Equals(filename, StringComparison.InvariantCultureIgnoreCase))) {
+				return;
+			}
+
+			try {
+				var stream = File.OpenRead(filename);
+				var reader = new StreamReader(stream, Reader.CurrentEncoding);
+				mIncludeStack.Push(new Inclusion() { filename = filename, reader = reader });
+				mIncludeHistory.Add(filename);
+			} catch {
+				Warning("failed to open include file '{0}'.", literal);
 			}
 		}
 		void ReadDefineDirective(string line, ref int cursor) {
 			string name;
 
 			if (!GetNextWord(line, ref cursor, out name)) {
-				Warning("missing variable name in .define.");
+				Warning("missing variable name.");
 				return;
 			} else if (GetWordType(name) != BmsWordType.VariableName) {
-				Warning("bad variable name '{0}' in .define.", name);
+				Warning("bad variable name '{0}'.", name);
 				return;
 			}
 
 			string immediate;
 
 			if (!GetNextWord(line, ref cursor, out immediate)) {
-				Warning("missing value in .define.");
+				Warning("missing value.");
 				return;
 			} else if (GetWordType(immediate) != BmsWordType.Immediate) {
-				Warning("bad variable value '{0}' in .define.", immediate);
+				Warning("bad variable value '{0}'.", immediate);
 				return;
 			}
 
 			DefineVariable(name, immediate);
 		}
-		void ReadPodDirective(string word, BmsArgumentType podtype, string line, ref int cursor) {
+		void ReadUndefineDirective(string line, ref int cursor) {
+			string name;
+
+			if (!GetNextWord(line, ref cursor, out name)) {
+				Warning("missing variable name.");
+				return;
+			} else if (GetWordType(name) != BmsWordType.VariableName) {
+				Warning("bad variable name '{0}'.", name);
+				return;
+			}
+
+			UndefineVariable(name);
+		}
+		void ReadUndefineLabelDirective(string line, ref int cursor) {
+			string name;
+
+			if (!GetNextWord(line, ref cursor, out name)) {
+				Warning("missing label name.");
+				return;
+			} else if (GetWordType(name) != BmsWordType.VariableName) {
+				Warning("bad label name '{0}'.", name);
+				return;
+			}
+
+			UndefineLabel(name);
+		}
+		void ReadPodDirective(BmsArgumentType podtype, string line, ref int cursor) {
 			string pod;
 
 			if (!GetNextWord(line, ref cursor, out pod)) {
-				Warning("missing value in {0}.", word);
+				Warning("missing value.");
 				return;
 			}
 
@@ -161,7 +239,7 @@ namespace arookas.SequenceAssembler {
 				immediate.Write(this, mWriter, podtype);
 			} else if (type == BmsWordType.LabelReference) {
 				if (podtype != BmsArgumentType.Int24) {
-					Error("writing a label as POD requires 24-bit.");
+					Error("writing a label as POD requires .int24.");
 				}
 
 				var reference = ReadLabelReference(pod);
@@ -180,7 +258,7 @@ namespace arookas.SequenceAssembler {
 			string word;
 
 			if (!GetNextWord(line, ref cursor, out word)) {
-				Warning("missing value in .align.");
+				Warning("missing value.");
 				return;
 			}
 
@@ -300,9 +378,15 @@ namespace arookas.SequenceAssembler {
 				word = ",";
 				++cursor;
 				return true;
-			}
-			while (cursor < line.Length && !Char.IsWhiteSpace(line[cursor]) && line[cursor] != ',') {
+			} else if (line[cursor] == '"') {
+				do {
+					++cursor;
+				} while (cursor < line.Length && line[cursor] != '"' && line[cursor - 1] != '\\');
 				++cursor;
+			} else {
+				while (cursor < line.Length && !Char.IsWhiteSpace(line[cursor]) && line[cursor] != ',') {
+					++cursor;
+				}
 			}
 			var length = (cursor - start);
 			if (length == 0) {
@@ -361,6 +445,10 @@ namespace arookas.SequenceAssembler {
 				return BmsWordType.Command;
 			}
 
+			if (Regex.IsMatch(word, @"^""(\\.|[^""])*""$")) {
+				return BmsWordType.StringLiteral;
+			}
+
 			return BmsWordType.Unknown;
 		}
 
@@ -369,14 +457,14 @@ namespace arookas.SequenceAssembler {
 		}
 		public void Warning(string format, params object[] arguments) {
 			var message = String.Format(format, arguments);
-			mareep.WriteWarning("BMS: line {0}: {1}\n", mLineNumber, message);
+			mareep.WriteWarning("BMS: {0}: line {1}: {2}\n", Path.GetFileName(Filename), (LineNumber + 1), message);
 		}
 		public void Error(string message) {
 			Error("{0}", message);
 		}
 		public void Error(string format, params object[] arguments) {
 			var message = String.Format(format, arguments);
-			mareep.WriteError("BMS: line {0}: {1}\n", mLineNumber, message);
+			mareep.WriteError("BMS: {0}: line {1}: {2}", Path.GetFileName(Filename), (LineNumber + 1), message);
 		}
 
 		public void AddRelocation(string symbol) {
@@ -386,22 +474,6 @@ namespace arookas.SequenceAssembler {
 			mRelocations.Add(relocation);
 		}
 		public void Link() {
-			mWriter.Keep();
-
-			for (var i = mRelocations.Count - 1; i >= 0; --i) {
-				var relocation = mRelocations[i];
-
-				if (!IsLabelDefined(relocation.symbol)) {
-					continue;
-				}
-
-				mWriter.Goto(relocation.offset);
-				mWriter.Write24(mLabels[relocation.symbol]);
-				mRelocations.RemoveAt(i);
-			}
-
-			mWriter.Back();
-
 			if (mRelocations.Count > 0) {
 				foreach (var relocation in mRelocations) {
 					mareep.WriteMessage("  {0}\n", relocation.symbol);
@@ -411,7 +483,26 @@ namespace arookas.SequenceAssembler {
 		}
 
 		public void DefineLabel(string label) {
+			if (IsLabelDefined(label)) {
+				Warning("label '{0}' redeclared.", label);
+			}
+
 			mLabels[label] = (int)mWriter.Position;
+
+			// link relocations as early as possible (this makes .undefinelabel work)
+			for (var i = (mRelocations.Count - 1); i >= 0; --i) {
+				if (mRelocations[i].symbol == label) {
+					mWriter.Keep();
+					mWriter.Goto(mRelocations[i].offset);
+					mWriter.Write24(mLabels[mRelocations[i].symbol]);
+					mRelocations.RemoveAt(i);
+					mWriter.Back();
+				}
+			}
+		}
+		public void UndefineLabel(string label) {
+			// any relocations relying on said label will already have been linked, since they're linked on definition
+			mLabels.Remove(label);
 		}
 		public bool IsLabelDefined(string name) {
 			return mLabels.ContainsKey(name);
@@ -426,14 +517,102 @@ namespace arookas.SequenceAssembler {
 		public void DefineVariable(string name, string input) {
 			mVariables[name] = new BmsImmediate(input);
 		}
+		public void UndefineVariable(string name) {
+			mVariables.Remove(name);
+		}
 		public bool IsVariableDefined(string name) {
 			return mVariables.ContainsKey(name);
+		}
+
+		string UnescapeStringLiteral(string literal) {
+			var buffer = new StringBuilder(literal.Length);
+			var index = 0;
+
+			while (index < literal.Length) {
+				var escape_start = literal.IndexOf('\\', index);
+
+				if (escape_start < 0 || escape_start >= (literal.Length - 1)) {
+					escape_start = literal.Length;
+				}
+
+				buffer.Append(literal, index, (escape_start - index));
+
+				if (escape_start >= literal.Length) {
+					break;
+				}
+
+				switch (literal[escape_start + 1]) {
+					case '\'': buffer.Append('\''); break;
+					case '"': buffer.Append('"'); break;
+					case '\\': buffer.Append('\\'); break;
+					case '0': buffer.Append('\0'); break;
+					case 'a': buffer.Append('\a'); break;
+					case 'b': buffer.Append('\b'); break;
+					case 'f': buffer.Append('\f'); break;
+					case 'n': buffer.Append('\n'); break;
+					case 't': buffer.Append('\t'); break;
+					case 'v': buffer.Append('\v'); break;
+					case 'x': buffer.Append(UnescapeHex(literal, (escape_start + 2), out index)); continue;
+					case 'u': buffer.Append(UnescapeUnicodeCodeUnit(literal, (escape_start + 2), out index)); continue;
+					case 'U': buffer.Append(UnescapeUnicodeSurrogatePair(literal, (escape_start + 2), out index)); continue;
+				}
+			}
+
+			return buffer.ToString();
+		}
+		char UnescapeHex(string value, int start, out int end) {
+			if (start > value.Length) {
+				Error("bad escape in string literal.");
+			}
+			var buffer = new StringBuilder(4);
+			var digits = 0;
+			while (digits < 4 && start < value.Length && IsHexadecimalDigit(value[start])) {
+				buffer.Append(value[start]);
+				++digits;
+				++start;
+			}
+			end = start;
+			return (char)Int32.Parse(buffer.ToString(), NumberStyles.AllowHexSpecifier);
+		}
+		char UnescapeUnicodeCodeUnit(string value, int start, out int end) {
+			if (start >= (value.Length - 4)) {
+				Error("bad escape in string literal.");
+			}
+			end = start + 4;
+			return (char)Int32.Parse(value.Substring(start, 4), NumberStyles.AllowHexSpecifier);
+		}
+		string UnescapeUnicodeSurrogatePair(string value, int start, out int end) {
+			if (start >= value.Length - 8) {
+				Error("bad escape in string literal.");
+			}
+			var high = (char)Int32.Parse(value.Substring(start, 4), NumberStyles.AllowHexSpecifier);
+			var low = (char)Int32.Parse(value.Substring(start + 4, 4), NumberStyles.AllowHexSpecifier);
+			if (!Char.IsHighSurrogate(high) || !Char.IsLowSurrogate(low)) {
+				Error("bad escape in string literal.");
+			}
+			end = (start + 8);
+			return String.Concat(high, low);
+		}
+		static bool IsHexadecimalDigit(char digit) {
+			return (
+				(digit >= '0' && digit <= '9') ||
+				(digit >= 'A' && digit <= 'F') ||
+				(digit >= 'a' && digit <= 'f')
+			);
 		}
 
 		struct Relocation {
 
 			public int offset;
 			public string symbol;
+
+		}
+
+		struct Inclusion {
+
+			public string filename;
+			public StreamReader reader;
+			public int line;
 
 		}
 
@@ -478,6 +657,7 @@ namespace arookas.SequenceAssembler {
 					case BmsWordType.LabelReference: argument = ReadLabelReference(word); break;
 					case BmsWordType.RegisterReference: argument = ReadRegisterReference(word); break;
 					case BmsWordType.RegisterDereference: argument = ReadRegisterDereference(word); break;
+					case BmsWordType.StringLiteral: argument = ReadStringLiteral(word); break;
 				}
 
 				if (argument == null) {
@@ -531,6 +711,10 @@ namespace arookas.SequenceAssembler {
 				return new BmsLabelReference(symbol, mLabels[symbol]);
 			}
 			return new BmsLabelReference(symbol);
+		}
+		BmsStringLiteral ReadStringLiteral(string word) {
+			var literal = UnescapeStringLiteral(word.Substring(1, (word.Length - 2)));
+			return new BmsStringLiteral(literal);
 		}
 
 		void EnsureArgumentCount(BmsArgument[] arguments, int count) {
@@ -1653,6 +1837,29 @@ namespace arookas.SequenceAssembler {
 
 		public static implicit operator int(BmsRegisterDereference dereference) {
 			return dereference.mRegisterIndex;
+		}
+
+	}
+
+	class BmsStringLiteral : BmsArgument {
+
+		string mValue;
+
+		public string Value { get { return mValue; } }
+
+		public override BmsArgumentType Type { get { return BmsArgumentType.StringLiteral; } }
+
+		public BmsStringLiteral() : this("") { }
+		public BmsStringLiteral(string value) {
+			mValue = (value ?? "");
+		}
+
+		public override void Write(BmsAssembler asm, aBinaryWriter writer, BmsArgumentType type) {
+			if (type != BmsArgumentType.StringLiteral) {
+				return;
+			}
+			
+			writer.WriteString<aZSTR>(mValue);
 		}
 
 	}
