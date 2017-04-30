@@ -186,17 +186,21 @@ namespace arookas.SequenceAssembler {
 				return;
 			}
 
-			string immediate;
+			string value;
 
-			if (!GetNextWord(line, ref cursor, out immediate)) {
+			if (!GetNextWord(line, ref cursor, out value)) {
 				Warning("missing value.");
-				return;
-			} else if (GetWordType(immediate) != BmsWordType.Immediate) {
-				Warning("bad variable value '{0}'.", immediate);
 				return;
 			}
 
-			DefineVariable(name, immediate);
+			var type = GetWordType(value);
+
+			switch (type) {
+				case BmsWordType.Immediate: DefineVariable(name, value); break;
+				case BmsWordType.KeyNumber: DefineVariable(name, ReadKeyNumber(value)); break;
+				case BmsWordType.RegisterReference: DefineVariable(name, ReadRegisterReference(value)); break;
+				default: Warning("bad variable value '{0}'.", value); break;
+			}
 		}
 		void ReadUndefineDirective(string line, ref int cursor) {
 			string name;
@@ -513,6 +517,9 @@ namespace arookas.SequenceAssembler {
 		}
 		public void DefineVariable(string name, BmsArgumentType type, int value) {
 			mVariables[name] = new BmsImmediate(type, value);
+		}
+		public void DefineVariable(string name, BmsImmediate immediate) {
+			DefineVariable(name, immediate.Type, immediate.Value);
 		}
 		public void DefineVariable(string name, string input) {
 			mVariables[name] = new BmsImmediate(input);
