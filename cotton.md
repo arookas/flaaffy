@@ -1,8 +1,15 @@
 
-## cotton assembler language
+## cotton
 
-The _cotton_ action of mareep utilizes a full-fledged assembler language from which to generate a BMS sequence.
+The _cotton_ action assembles a text-based assembler language into a BMS file.
+The format is inspired by traditional languages, such as x86 and PPC.
 No assumptions are made about what the user wants in the sequence: the language corresponds 1:1 with the binary format.
+The arguments are as follows:
+
+|Parameter|Description|
+|---------|-----------|
+|-input _&lt;file&gt;_|Specifies the path and filename to the input assembly text file.|
+|-output _&lt;file&gt;_|Specifies the path and filename to the output BMS file.|
 
 ### Grammar
 
