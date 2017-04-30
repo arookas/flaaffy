@@ -17,6 +17,7 @@ namespace arookas {
 		Whap,
 		Wave,
 		Cotton,
+		Jolt,
 
 	}
 
