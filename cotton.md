@@ -152,7 +152,10 @@ It may be preceeded by a number of arguments, separated by commas.
 
 |Directive|Description|
 |---------|-----------|
-|.define _name_ _value_|Creates a variable named _name_. _value_ may be any immediate value.|
+|.include _file_|Includes the file at _file_ (relative to the current file), specified in quotes. If the file has already been included before, this directive will do nothing.|
+|.define _name_ _value_|Creates a variable named _name_. _value_ may be any immediate value, key number, or register reference.|
+|.undefine _name_|Undefines the variable named _name_. If none exists, the directive will do nothing.|
+|.undefinelabel _name_|Undefines the label named _name_. If none exists, the directive will do nothing.|
 |.align _multiple_|Writes padding zeroes until the binary file size is a multiple of _multiple_ bytes. If the size is already of the specified multiple, nothing is written. _multiple_ may be any immediate value or variable.|
 
 There are also [POD](https://en.wikipedia.org/wiki/Passive_data_structure) directives, allowing you to embed unadultered immediates into the binary file.
