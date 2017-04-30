@@ -1471,7 +1471,48 @@ namespace arookas.SequenceAssembler {
 			}
 		}
 		void ReadPrintfCommand(string command, BmsArgument[] arguments) {
-			// TODO
+			EnsureArgumentCount(arguments, 1, Int32.MaxValue);
+			EnsureArgumentType(arguments, 0, BmsArgumentType.StringLiteral);
+
+			const string cFormatIdentifiers = "dxrRt";
+
+			var format = (arguments[0] as BmsStringLiteral).Value;
+			var argumentcount = 0;
+
+			for (var i = 0; i < (format.Length - 1); ++i) {
+				if (format[i] != '%') {
+					continue;
+				}
+
+				var identifier = format[i + 1];
+
+				if (identifier == '%') {
+					continue;
+				}
+
+				if (cFormatIdentifiers.IndexOf(identifier) < 0) {
+					Error("bad format identifier '%{0}'.", identifier);
+				}
+
+				++argumentcount;
+
+				if (argumentcount > 4) {
+					Error("too many format identifiers.");
+				}
+			}
+
+			EnsureArgumentCount(arguments, (1 + argumentcount));
+
+			for (var i = 1; i < arguments.Length; ++i) {
+				// TODO: add support for %s
+				EnsureArgumentType(arguments, i, BmsArgumentType.Int8);
+			}
+
+			mWriter.Write8(0xFB);
+
+			foreach (var argument in arguments) {
+				argument.Write(this, mWriter);
+			}
 		}
 		void ReadSimpleCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 0);
