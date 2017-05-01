@@ -407,6 +407,8 @@ namespace arookas {
 						if (velregion.Pitch != 1.0f) {
 							writer.WriteAttributeString("pitch", velregion.Pitch.ToString("R"));
 						}
+
+						writer.WriteEndElement();
 					}
 
 					writer.WriteEndElement();
@@ -566,6 +568,12 @@ namespace arookas {
 					panTable = reader.ReadS8s(128);
 					releaseTable = reader.Read16s(128);
 				}
+
+				mareep.WriteMessage(
+					"PER{0}: {1} percussions\n",
+					(version == 2 ? '2' : 'C'),
+					percussionOffsets.Count(offset => offset != 0)
+				);
 
 				for (var i = 0; i < 128; ++i) {
 					if (percussionOffsets[i] == 0) {
