@@ -425,7 +425,7 @@ namespace arookas.SequenceAssembler {
 				return BmsWordType.VariableName;
 			}
 
-			if (Regex.IsMatch(word, @"^-?\$?[0-9]+[bBsShH]?$")) {
+			if (Regex.IsMatch(word, @"^-?\$?[0-9]+[bBsShHqQwW]?$")) {
 				return BmsWordType.Immediate;
 			}
 
