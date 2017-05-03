@@ -2,6 +2,7 @@
 using arookas.IO.Binary;
 using arookas.Xml;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 
@@ -73,6 +74,98 @@ namespace arookas {
 
 		public static class Xml {
 
+			static IEnumerable<InstrumentOscillatorTable> LoadOscillatorTable(xElement element) {
+				var tables = new List<InstrumentOscillatorTable>();
+
+				foreach (var child in element) {
+					var table = new InstrumentOscillatorTable();
+					
+					switch (child.Name) {
+						case "linear": {
+							table.mode = InstrumentOscillatorTableMode.Linear;
+							table.time = (child.Attribute("time") | 0);
+							table.amount = (child.Attribute("amount") | 0);
+							break;
+						}
+						case "square": {
+							table.mode = InstrumentOscillatorTableMode.Square;
+							table.time = (child.Attribute("time") | 0);
+							table.amount = (child.Attribute("amount") | 0);
+							break;
+						}
+						case "square-root": {
+							table.mode = InstrumentOscillatorTableMode.SquareRoot;
+							table.time = (child.Attribute("time") | 0);
+							table.amount = (child.Attribute("amount") | 0);
+							break;
+						}
+						case "sample-cell": {
+							table.mode = InstrumentOscillatorTableMode.SampleCell;
+							table.time = (child.Attribute("time") | 0);
+							table.amount = (child.Attribute("amount") | 0);
+							break;
+						}
+						case "loop": {
+							table.mode = InstrumentOscillatorTableMode.Loop;
+							table.time = (child.Attribute("dest") | 0);
+							break;
+						}
+						case "hold": {
+							table.mode = InstrumentOscillatorTableMode.Hold;
+							break;
+						}
+						case "stop": {
+							table.mode = InstrumentOscillatorTableMode.Stop;
+							break;
+						}
+						default: {
+							mareep.WriteError("Unknown oscillator table mode '{0}'.", child.Name);
+							break;
+						}
+					}
+
+					tables.Add(table);
+				}
+
+				return tables;
+			}
+			static InstrumentOscillatorInfo LoadOscillator(xElement element) {
+				var oscillator = new InstrumentOscillatorInfo();
+				var targetAttr = element.Attribute("target");
+
+				if (targetAttr == null) {
+					mareep.WriteError("Missing target attribute in oscillator.");
+				}
+
+				var target = targetAttr.AsEnum((InstrumentEffectTarget)(-1));
+
+				if (!target.IsDefined()) {
+					mareep.WriteError("Bad target '{0}' in oscillator.", targetAttr.Value);
+				}
+
+				oscillator.Target = target;
+				oscillator.Rate = (element.Attribute("rate") | 1.0f);
+				oscillator.Width = (element.Attribute("width") | 1.0f);
+				oscillator.Base = (element.Attribute("base") | 0.0f);
+
+				var startTableElem = element.Element("start-table");
+
+				if (startTableElem != null) {
+					foreach (var table in LoadOscillatorTable(startTableElem)) {
+						oscillator.AddStartTable(table.mode, table.time, table.amount);
+					}
+				}
+
+				var releaseTableElem = element.Element("release-table");
+
+				if (releaseTableElem != null) {
+					foreach (var table in LoadOscillatorTable(releaseTableElem)) {
+						oscillator.AddReleaseTable(table.mode, table.time, table.amount);
+					}
+				}
+
+				return oscillator;
+			}
 			static InstrumentEffect LoadEffect(xElement effectElem, string warningPrefix) {
 				var target = effectElem.Attribute("target").AsEnum(InstrumentEffectTarget.Volume);
 
@@ -120,6 +213,10 @@ namespace arookas {
 
 				instrument.Volume = (instrumentElem.Attribute("volume") | 1.0f);
 				instrument.Pitch = (instrumentElem.Attribute("pitch") | 1.0f);
+
+				foreach (var oscillatorElem in instrumentElem.Elements("oscillator")) {
+					instrument.AddOscillator(LoadOscillator(oscillatorElem));
+				}
 
 				foreach (var effectElem in instrumentElem.Elements().Where(e => e.Name.EndsWith("-effect", StringComparison.InvariantCultureIgnoreCase))) {
 					var effect = LoadEffect(effectElem, String.Format("Basic #{0}", program));
@@ -288,6 +385,75 @@ namespace arookas {
 				return bank;
 			}
 
+			static void SaveOscillator(InstrumentOscillatorInfo osc, XmlWriter writer) {
+				writer.WriteStartElement("oscillator");
+				writer.WriteAttributeString("target", osc.Target.ToString().ToLowerInvariant());
+				writer.WriteAttributeString("rate", osc.Rate.ToString("R"));
+				writer.WriteAttributeString("width", osc.Width.ToString("R"));
+				writer.WriteAttributeString("base", osc.Base.ToString("R"));
+
+				if (osc.StartTableCount > 0) {
+					writer.WriteStartElement("start-table");
+
+					for (var i = 0; i < osc.StartTableCount; ++i) {
+						var table = osc.GetStartTable(i);
+						string name;
+
+						switch (table.mode) {
+							case InstrumentOscillatorTableMode.SquareRoot: name = "square-root"; break;
+							case InstrumentOscillatorTableMode.SampleCell: name = "sample-cell"; break;
+							default: name = table.mode.ToString().ToLowerInvariant(); break;
+						}
+
+						writer.WriteStartElement(name);
+
+						switch (table.mode) {
+							case InstrumentOscillatorTableMode.Loop: {
+								writer.WriteAttributeString("dest", table.time.ToString());
+								break;
+							}
+							case InstrumentOscillatorTableMode.Hold: break;
+							case InstrumentOscillatorTableMode.Stop: break;
+							default: {
+								writer.WriteAttributeString("time", table.time.ToString());
+								writer.WriteAttributeString("amount", table.amount.ToString());
+								break;
+							}
+						}
+
+						writer.WriteEndElement();
+					}
+
+					writer.WriteEndElement();
+				}
+
+				if (osc.ReleaseTableCount > 0) {
+					writer.WriteStartElement("release-table");
+
+					for (var i = 0; i < osc.ReleaseTableCount; ++i) {
+						var table = osc.GetReleaseTable(i);
+						writer.WriteStartElement(table.mode.ToString().ToLowerInvariant());
+
+						switch (table.mode) {
+							case InstrumentOscillatorTableMode.Loop: {
+								writer.WriteAttributeString("dest", table.time.ToString());
+								break;
+							}
+							default: {
+								writer.WriteAttributeString("time", table.time.ToString());
+								writer.WriteAttributeString("amount", table.amount.ToString());
+								break;
+							}
+						}
+
+						writer.WriteEndElement();
+					}
+
+					writer.WriteEndElement();
+				}
+
+				writer.WriteEndElement();
+			}
 			static void SaveEffect(InstrumentEffect effect, XmlWriter writer) {
 				if (effect is RandomInstrumentEffect) {
 					var rand = (effect as RandomInstrumentEffect);
@@ -322,6 +488,10 @@ namespace arookas {
 				writer.WriteStartElement("instrument");
 				writer.WriteAttributeString("program", program.ToString());
 
+				foreach (var oscillator in instrument.Oscillators) {
+					SaveOscillator(oscillator, writer);
+				}
+
 				foreach (var effect in instrument.Effects) {
 					SaveEffect(effect, writer);
 				}
@@ -329,8 +499,8 @@ namespace arookas {
 				foreach (var keyregion in instrument) {
 					writer.WriteStartElement("key-region");
 
-					if (instrument.Count > 1 || instrument[0].Key < 127) {
-						writer.WriteAttributeString("key", keyregion.Key.ToString());
+					if (instrument.Count > 1 || keyregion.Key != 127) {
+						writer.WriteAttributeString("key", mareep.ConvertKey(keyregion.Key));
 					}
 
 					foreach (var velregion in keyregion) {
@@ -373,7 +543,7 @@ namespace arookas {
 					}
 
 					writer.WriteStartElement("percussion");
-					writer.WriteAttributeString("key", percussion.Key.ToString());
+					writer.WriteAttributeString("key", mareep.ConvertKey(percussion.Key));
 
 					if (percussion.Volume != 1.0f) {
 						writer.WriteAttributeString("volume", percussion.Volume.ToString("R"));
@@ -437,6 +607,22 @@ namespace arookas {
 
 		public static class Binary {
 
+			static short[] LoadOscTable(aBinaryReader reader, int offset) {
+				if (offset == 0) {
+					return null;
+				}
+
+				reader.Goto(offset);
+				var count = 0;
+
+				for (var i = 0; i <= 10; ++count) {
+					i = reader.ReadS16();
+					reader.Step(4);
+				}
+
+				reader.Goto(offset);
+				return reader.ReadS16s(count * 3);
+			}
 			static MelodicInstrument LoadMelodic(aBinaryReader reader) {
 				var instrument = new MelodicInstrument();
 
@@ -457,6 +643,60 @@ namespace arookas {
 					(randomEffectOffsets.Count(offset => offset != 0) + senseEffectOffsets.Count(offset => offset != 0)),
 					keyRegionOffsets.Length
 				);
+
+				foreach (var offset in oscillatorOffsets) {
+					if (offset == 0) {
+						continue;
+					}
+
+					reader.Goto(offset);
+
+					var osc = new InstrumentOscillatorInfo();
+
+					var target = (InstrumentEffectTarget)reader.Read8();
+
+					if (!target.IsDefined()) {
+						mareep.WriteError("Bad oscillator target '{0}' at 0x{1:X6}.", (int)target, (reader.Position - 1));
+					}
+
+					osc.Target = target;
+					reader.Step(3); // alignment
+					osc.Rate = reader.ReadF32();
+					var startTableOffset = reader.ReadS32();
+					var releaseTableOffset = reader.ReadS32();
+					osc.Width = reader.ReadF32();
+					osc.Base = reader.ReadF32();
+
+					var startTable = LoadOscTable(reader, startTableOffset);
+
+					if (startTable != null) {
+						for (var i = 0; i < startTable.Length; i += 3) {
+							var mode = (InstrumentOscillatorTableMode)startTable[i];
+
+							if (!mode.IsDefined()) {
+								mareep.WriteError("Bad oscillator table mode '{0}' at 0x{1:X6}.", startTable[i], (startTableOffset + 6 * i));
+							}
+
+							osc.AddStartTable(mode, startTable[i + 1], startTable[i + 2]);
+						}
+					}
+
+					var releaseTable = LoadOscTable(reader, releaseTableOffset);
+
+					if (releaseTable != null) {
+						for (var i = 0; i < releaseTable.Length; i += 3) {
+							var mode = (InstrumentOscillatorTableMode)releaseTable[i];
+
+							if (!mode.IsDefined()) {
+								mareep.WriteError("Bad oscillator table mode '{0}' at 0x{1:X6}.", releaseTable[i], (releaseTableOffset + 6 * i));
+							}
+
+							osc.AddReleaseTable(mode, releaseTable[i + 1], releaseTable[i + 2]);
+						}
+					}
+
+					instrument.AddOscillator(osc);
+				}
 
 				foreach (var offset in randomEffectOffsets) {
 					if (offset == 0) {
@@ -704,6 +944,24 @@ namespace arookas {
 				return ((value + 31) & ~31);
 			}
 
+			static int CalculateOscillatorSize(InstrumentOscillatorInfo oscillator) {
+				return (32 + RoundUp32B(oscillator.StartTableCount * 6) + RoundUp32B(oscillator.ReleaseTableCount * 6));
+			}
+			static int CalculateOscillatorTableSize(IEnumerable<InstrumentOscillatorInfo> osctable) {
+				return osctable.Sum(osc => CalculateOscillatorSize(osc));
+			}
+			static int CalculateOscillatorOffset(IEnumerable<InstrumentOscillatorInfo> osctable, InstrumentOscillatorInfo oscillator) {
+				var offset = 1024;
+
+				foreach (var osc in osctable) {
+					if (oscillator.IsEquivalentTo(osc)) {
+						break;
+					}
+					offset += CalculateOscillatorSize(osc);
+				}
+
+				return offset;
+			}
 			static int CalculatePercussionSize(Percussion percussion) {
 				return (RoundUp16B(20 + 4 * percussion.Count) + (16 * percussion.EffectCount) + (16 * percussion.Count));
 			}
@@ -728,9 +986,52 @@ namespace arookas {
 				return 0;
 			}
 			static int CalculateBankSize(InstrumentBank bank) {
-				return (1024 + bank.Sum(instrument => CalculateInstrumentSize(instrument)));
+				return (1024 + CalculateOscillatorTableSize(bank.GenerateOscillatorTable()) + bank.Sum(instrument => CalculateInstrumentSize(instrument)));
 			}
 
+			static void SaveOscillator(InstrumentOscillatorInfo osc, aBinaryWriter writer) {
+				var offset = ((int)writer.Position + 32);
+
+				writer.Write8((byte)osc.Target);
+				writer.WritePadding(4, 0);
+				writer.WriteF32(osc.Rate);
+
+				if (osc.StartTableCount > 0) {
+					writer.WriteS32(offset);
+					offset += RoundUp32B(osc.StartTableCount * 6);
+				} else {
+					writer.WriteS32(0);
+				}
+
+				if (osc.ReleaseTableCount > 0) {
+					writer.WriteS32(offset);
+					offset += RoundUp32B(osc.ReleaseTableCount * 6);
+				} else {
+					writer.WriteS32(0);
+				}
+
+				writer.WriteF32(osc.Width);
+				writer.WriteF32(osc.Base);
+				writer.WritePadding(32, 0);
+
+				for (var i = 0; i < osc.StartTableCount; ++i) {
+					var table = osc.GetStartTable(i);
+					writer.WriteS16((short)table.mode);
+					writer.WriteS16((short)table.time);
+					writer.WriteS16((short)table.amount);
+				}
+
+				writer.WritePadding(32, 0);
+
+				for (var i = 0; i < osc.ReleaseTableCount; ++i) {
+					var table = osc.GetReleaseTable(i);
+					writer.WriteS16((short)table.mode);
+					writer.WriteS16((short)table.time);
+					writer.WriteS16((short)table.amount);
+				}
+
+				writer.WritePadding(32, 0);
+			}
 			static void SaveRandomEffect(RandomInstrumentEffect effect, aBinaryWriter writer) {
 				writer.Write8((byte)effect.Target);
 				writer.WritePadding(4, 0);
@@ -814,7 +1115,7 @@ namespace arookas {
 					SaveVelocityRegion(velregion, writer);
 				}
 			}
-			static void SaveMelodic(MelodicInstrument instrument, int program, aBinaryWriter writer) {
+			static void SaveMelodic(MelodicInstrument instrument, InstrumentBank bank, int program, aBinaryWriter writer) {
 				var offset = ((int)writer.Position + RoundUp16B(44 + 4 * instrument.Count));
 
 				writer.Write32(INST);
@@ -822,9 +1123,19 @@ namespace arookas {
 				writer.WriteF32(instrument.Volume);
 				writer.WriteF32(instrument.Pitch);
 
-				// TODO: oscillators
-				var oscillatorOffsets = new int[2];
-				writer.WriteS32s(oscillatorOffsets);
+				if (instrument.OscillatorCount > 2) {
+					mareep.WriteWarning("Instrument #{0} has more than 2 oscillators.\n", program);
+				}
+
+				var osctable = bank.GenerateOscillatorTable();
+
+				for (var i = 0; i < 2; ++i) {
+					if (i < instrument.OscillatorCount) {
+						writer.WriteS32(CalculateOscillatorOffset(osctable, instrument.GetOscillatorAt(i)));
+					} else {
+						writer.WriteS32(0);
+					}
+				}
 
 				var randomEffects = instrument.Effects.OfType<RandomInstrumentEffect>().ToArray();
 
@@ -879,7 +1190,7 @@ namespace arookas {
 
 				writer.WritePadding(32, 0);
 			}
-			static void SaveDrumSet(DrumSet drumset, int program, aBinaryWriter writer) {
+			static void SaveDrumSet(DrumSet drumset, InstrumentBank bank, int program, aBinaryWriter writer) {
 				var offset = ((int)writer.Position + 1056);
 
 				writer.Write32(PER2);
@@ -924,7 +1235,7 @@ namespace arookas {
 				writer.WritePadding(32, 0);
 			}
 			static void SaveInstrumentTable(InstrumentBank bank, aBinaryWriter writer) {
-				var offset = 1024;
+				var offset = (1024 + CalculateOscillatorTableSize(bank.GenerateOscillatorTable()));
 
 				for (var i = 0; i < 240; ++i) {
 					if (bank[i] != null) {
@@ -946,8 +1257,27 @@ namespace arookas {
 				writer.WriteS32(bank.VirtualNumber);
 				writer.WritePadding(32, 0);
 
+				var osctable = bank.GenerateOscillatorTable();
+				var offset = (1024 + CalculateOscillatorTableSize(osctable));
+
 				writer.Write32(BANK);
-				SaveInstrumentTable(bank, writer);
+
+				for (var i = 0; i < 240; ++i) {
+					if (bank[i] != null) {
+						writer.WriteS32(offset);
+						offset += CalculateInstrumentSize(bank[i]);
+					} else {
+						writer.WriteS32(0);
+					}
+				}
+
+				writer.WritePadding(32, 0);
+
+				foreach (var osc in osctable) {
+					SaveOscillator(osc, writer);
+				}
+
+				writer.WritePadding(32, 0);
 
 				for (var i = 0; i < 240; ++i) {
 					if (bank[i] == null) {
@@ -955,11 +1285,11 @@ namespace arookas {
 					}
 
 					if (bank[i] is MelodicInstrument) {
-						SaveMelodic((bank[i] as MelodicInstrument), i, writer);
+						SaveMelodic((bank[i] as MelodicInstrument), bank, i, writer);
 					} else if (bank[i] is DrumSet) {
-						SaveDrumSet((bank[i] as DrumSet), i, writer);
+						SaveDrumSet((bank[i] as DrumSet), bank, i, writer);
 					} else {
-						mareep.WriteError("Instrument #{0} is unknown type '{1}'.\n", i, bank[i].GetType().Name);
+						mareep.WriteError("Instrument #{0} is unknown type '{1}'.", i, bank[i].GetType().Name);
 					}
 				}
 

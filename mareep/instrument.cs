@@ -23,6 +23,7 @@ namespace arookas {
 	class MelodicInstrument : IInstrument, IEnumerable<MelodicKeyRegion> {
 
 		float mVolume, mPitch;
+		List<InstrumentOscillatorInfo> mOscillators;
 		List<MelodicKeyRegion> mKeyRegions;
 		List<InstrumentEffect> mEffects;
 
@@ -44,11 +45,15 @@ namespace arookas {
 		public IEnumerable<InstrumentEffect> Effects { get { return mEffects; } }
 		public int EffectCount { get { return mEffects.Count; } }
 
+		public IEnumerable<InstrumentOscillatorInfo> Oscillators { get { return mOscillators; } }
+		public int OscillatorCount { get { return mOscillators.Count; } }
+
 		public MelodicInstrument() : this(1.0f, 1.0f) { }
 		public MelodicInstrument(float volume, float pitch) {
 			mVolume = volume;
 			mPitch = pitch;
 
+			mOscillators = new List<InstrumentOscillatorInfo>(2);
 			mKeyRegions = new List<MelodicKeyRegion>(8);
 			mEffects = new List<InstrumentEffect>(4);
 		}
@@ -144,6 +149,43 @@ namespace arookas {
 			return true;
 		}
 		public void ClearEffects() { mEffects.Clear(); }
+
+		public bool AddOscillator(InstrumentOscillatorInfo osc) {
+			if (osc == null) {
+				return false;
+			}
+
+			if (mOscillators.Contains(osc)) {
+				return false;
+			}
+
+			mOscillators.Add(osc);
+
+			return true;
+		}
+		public InstrumentOscillatorInfo GetOscillatorAt(int index) {
+			if (index < 0 || index >= mOscillators.Count) {
+				return null;
+			}
+
+			return mOscillators[index];
+		}
+		public bool RemoveOscillator(InstrumentOscillatorInfo osc) {
+			if (osc == null) {
+				return false;
+			}
+
+			return mOscillators.Remove(osc);
+		}
+		public bool RemoveOscillatorAt(int index) {
+			if (index < 0 || index > mOscillators.Count) {
+				return false;
+			}
+
+			mOscillators.RemoveAt(index);
+			return true;
+		}
+		public void ClearOscillators() { mOscillators.Clear(); }
 
 		public IEnumerator<MelodicKeyRegion> GetEnumerator() { return mKeyRegions.GetEnumerator(); }
 		IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
@@ -568,6 +610,26 @@ namespace arookas {
 			return true;
 		}
 
+		public IEnumerable<InstrumentOscillatorInfo> GenerateOscillatorTable() {
+			var oscillators = new List<InstrumentOscillatorInfo>(480);
+
+			for (var i = 0; i < 240; ++i) {
+				if (mInstruments[i] == null || mInstruments[i].Type != InstrumentType.Melodic) {
+					continue;
+				}
+
+				var instrument = (mInstruments[i] as MelodicInstrument);
+
+				foreach (var oscillator in instrument.Oscillators) {
+					if (!oscillators.Any(osc => osc.IsEquivalentTo(oscillator))) {
+						oscillators.Add(oscillator);
+					}
+				}
+			}
+
+			return oscillators;
+		}
+
 		public IEnumerator<IInstrument> GetEnumerator() { return mInstruments.GetArrayEnumerator(); }
 		IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
 
@@ -732,6 +794,207 @@ namespace arookas {
 			} else {
 				return (1.0f + (mRangeHi - 1.0f) * ((float)(value - mWeight) / (float)(127 - mWeight)));
 			}
+		}
+
+	}
+
+	enum InstrumentOscillatorTableMode {
+
+		Linear = 0,
+		Square,
+		SquareRoot,
+		SampleCell,
+
+		Loop = 13,
+		Hold,
+		Stop,
+
+	}
+
+	struct InstrumentOscillatorTable {
+
+		public InstrumentOscillatorTableMode mode;
+		public int time;
+		public int amount;
+
+		public static bool operator ==(InstrumentOscillatorTable left, InstrumentOscillatorTable right) {
+			return (
+				left.mode == right.mode &&
+				left.time == right.time &&
+				left.amount == right.amount
+			);
+		}
+		public static bool operator !=(InstrumentOscillatorTable left, InstrumentOscillatorTable right) {
+			return !(left == right);
+		}
+
+	}
+
+	class InstrumentOscillatorInfo {
+
+		InstrumentEffectTarget mTarget;
+		float mRate;
+		List<InstrumentOscillatorTable> mStartTable;
+		List<InstrumentOscillatorTable> mReleaseTable;
+		float mWidth, mBase;
+
+		public InstrumentEffectTarget Target {
+			get { return mTarget; }
+			set {
+				if (!value.IsDefined()) {
+					throw new ArgumentOutOfRangeException("value");
+				}
+
+				mTarget = value;
+			}
+		}
+		public float Rate {
+			get { return mRate; }
+			set { mRate = value; }
+		}
+		public int StartTableCount { get { return mStartTable.Count; } }
+		public int ReleaseTableCount { get { return mReleaseTable.Count; } }
+		public float Width {
+			get { return mWidth; }
+			set { mWidth = value; }
+		}
+		public float Base {
+			get { return mBase; }
+			set { mBase = value; }
+		}
+
+		public InstrumentOscillatorInfo() : this(InstrumentEffectTarget.Volume, 1.0f, 0.0f, 1.0f) { }
+		public InstrumentOscillatorInfo(InstrumentEffectTarget target, float rate, float width, float fbase) {
+			if (!target.IsDefined()) {
+				throw new ArgumentOutOfRangeException("target");
+			}
+
+			mTarget = target;
+			mRate = rate;
+			mWidth = width;
+			mBase = fbase;
+
+			mStartTable = new List<InstrumentOscillatorTable>(5);
+			mReleaseTable = new List<InstrumentOscillatorTable>(5);
+		}
+
+		public void AddStartTable(InstrumentOscillatorTableMode mode, int time = 0, int amount = 0) {
+			if (!mode.IsDefined()) {
+				throw new ArgumentOutOfRangeException("mode");
+			}
+
+			var table = new InstrumentOscillatorTable();
+			table.mode = mode;
+			table.time = time;
+			table.amount = amount;
+			mStartTable.Add(table);
+		}
+		public void InsertStartTable(int index, InstrumentOscillatorTableMode mode, int time = 0, int amount = 0) {
+			if (index < 0 || index > mStartTable.Count) {
+				throw new ArgumentOutOfRangeException("index");
+			}
+
+			if (!mode.IsDefined()) {
+				throw new ArgumentOutOfRangeException("mode");
+			}
+
+			var table = new InstrumentOscillatorTable();
+			table.mode = mode;
+			table.time = time;
+			table.amount = amount;
+			mStartTable.Insert(index, table);
+		}
+		public void RemoveStartTable(int index) {
+			if (index < 0 || index >= mStartTable.Count) {
+				throw new ArgumentOutOfRangeException("index");
+			}
+
+			mStartTable.RemoveAt(index);
+		}
+		public InstrumentOscillatorTable GetStartTable(int index) {
+			if (index < 0 || index >= mStartTable.Count) {
+				throw new ArgumentOutOfRangeException("index");
+			}
+
+			return mStartTable[index];
+		}
+		public void ClearStartTable() { mStartTable.Clear(); }
+
+		public void AddReleaseTable(InstrumentOscillatorTableMode mode, int time = 0, int amount = 0) {
+			if (!mode.IsDefined()) {
+				throw new ArgumentOutOfRangeException("mode");
+			}
+
+			var table = new InstrumentOscillatorTable();
+			table.mode = mode;
+			table.time = time;
+			table.amount = amount;
+			mReleaseTable.Add(table);
+		}
+		public void InsertReleaseTable(int index, InstrumentOscillatorTableMode mode, int time = 0, int amount = 0) {
+			if (index < 0 || index > mReleaseTable.Count) {
+				throw new ArgumentOutOfRangeException("index");
+			}
+
+			if (!mode.IsDefined()) {
+				throw new ArgumentOutOfRangeException("mode");
+			}
+
+			var table = new InstrumentOscillatorTable();
+			table.mode = mode;
+			table.time = time;
+			table.amount = amount;
+			mReleaseTable.Insert(index, table);
+		}
+		public void RemoveReleaseTable(int index) {
+			if (index < 0 || index >= mReleaseTable.Count) {
+				throw new ArgumentOutOfRangeException("index");
+			}
+
+			mReleaseTable.RemoveAt(index);
+		}
+		public InstrumentOscillatorTable GetReleaseTable(int index) {
+			if (index < 0 || index >= mReleaseTable.Count) {
+				throw new ArgumentOutOfRangeException("index");
+			}
+
+			return mReleaseTable[index];
+		}
+		public void ClearReleaseTable() { mReleaseTable.Clear(); }
+
+		public bool IsEquivalentTo(InstrumentOscillatorInfo oscillator) {
+			if (oscillator == null) {
+				return false;
+			}
+
+			if ((mTarget != oscillator.mTarget) ||
+				(mRate != oscillator.mRate) ||
+				(mWidth != oscillator.mWidth) ||
+				(mBase != oscillator.mBase)) {
+				return false;
+			}
+
+			if (mStartTable.Count != oscillator.mStartTable.Count) {
+				return false;
+			}
+
+			for (var i = 0; i < mStartTable.Count; ++i) {
+				if (mStartTable[i] != oscillator.mStartTable[i]) {
+					return false;
+				}
+			}
+
+			if (mReleaseTable.Count != oscillator.mReleaseTable.Count) {
+				return false;
+			}
+
+			for (var i = 0; i < mReleaseTable.Count; ++i) {
+				if (mReleaseTable[i] != oscillator.mReleaseTable[i]) {
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 	}
