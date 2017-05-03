@@ -501,13 +501,16 @@ namespace arookas {
 							wave.LoopEnd = loopEnd;
 						}
 
-						var sampleCount = reader.ReadS32();
+						var sampleCount = 0;
 
-						if (sampleCount < 0) {
-							mareep.WriteError("Wave group #{0}: bad sample count '{1}' in wave #{2}.\n", i, sampleCount, j);
-						} else {
-							wave.SampleCount = sampleCount;
+						switch (format) {
+							case WaveFormat.Pcm8: sampleCount = waveSize; break;
+							case WaveFormat.Pcm16: sampleCount = (waveSize / 2); break;
+							case WaveFormat.Adpcm2: sampleCount = (waveSize / 5 * 16); break;
+							case WaveFormat.Adpcm4: sampleCount = (waveSize / 9 * 16); break;
 						}
+
+						wave.SampleCount = sampleCount;
 
 						if (loopStart > loopEnd) {
 							mareep.WriteWarning("Wave group #{0}: loop start '{1}' is greater than loop end '{2}' in wave #{2}.\n", i, loopStart, loopEnd, j);
