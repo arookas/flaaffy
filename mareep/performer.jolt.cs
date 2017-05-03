@@ -160,7 +160,7 @@ namespace arookas.Jolt {
 		void ReadControlChange(long time, EventInfo ev) {
 			switch (ev.controller) {
 				case 7: mChannelTracks[ev.channel].AddEvent(time, "timedparam 0, {0}s", ev.value); break;
-				case 10: mChannelTracks[ev.channel].AddEvent(time, "timedparam 3, {0}s", ((ev.value - 64) * 2)); break;
+				case 10: mChannelTracks[ev.channel].AddEvent(time, "timedparam 3, {0}s", ev.value); break;
 				case 32: mChannelTracks[ev.channel].AddEvent(time, "load rbank, {0}b", ev.value); break;
 			}
 		}
