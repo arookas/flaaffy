@@ -171,7 +171,7 @@ namespace arookas {
 			}
 
 			if (badwaves > 0) {
-				mareep.WriteError("Failed to transfer {0} wave(s).\n", badwaves);
+				mareep.WriteError("Failed to transfer {0} wave(s).", badwaves);
 			}
 		}
 		void TransferWavesBinToXml(WaveBank waveBank) {
@@ -270,7 +270,7 @@ namespace arookas {
 							if (loopStart < 0) {
 								mareep.WriteError("Bad loop start '{0}' in wave '{1}' of wave group \"{2}\".\n", loopStart, waveid, waveGroup.ArchiveFileName);
 							} else if (loopEnd < 0) {
-								mareep.WriteError("Bad loop start '{0}' in wave '{1}' of wave group \"{2}\".\n", loopStart, waveid, waveGroup.ArchiveFileName);
+								mareep.WriteError("Bad loop end '{0}' in wave '{1}' of wave group \"{2}\".\n", loopEnd, waveid, waveGroup.ArchiveFileName);
 							}
 
 							wave.Loop = true;
@@ -349,7 +349,7 @@ namespace arookas {
 				reader.PushAnchor();
 
 				if (reader.Read32() != WSYS) {
-					mareep.WriteError("Could not find WSYS.\n");
+					mareep.WriteError("Could not find WSYS.");
 				}
 
 				var size = reader.ReadS32();
@@ -364,13 +364,13 @@ namespace arookas {
 				reader.Goto(winfOffset);
 
 				if (reader.Read32() != WINF) {
-					mareep.WriteError("Could not find WINF at 0x{0:X}.\n", winfOffset);
+					mareep.WriteError("Could not find WINF at 0x{0:X}.", winfOffset);
 				}
 
 				var waveGroupCount = reader.ReadS32();
 
 				if (waveGroupCount < 0) {
-					mareep.WriteError("Bad wave-group count '{0}' in WINF.\n", waveGroupCount);
+					mareep.WriteError("Bad wave-group count '{0}' in WINF.", waveGroupCount);
 				}
 
 				mareep.WriteMessage("WINF found, {0} wave group(s).\n", waveGroupCount);
@@ -380,7 +380,7 @@ namespace arookas {
 				reader.Goto(wbctOffset);
 
 				if (reader.Read32() != WBCT) {
-					mareep.WriteError("Could not find WBCT at 0x{0:X}.\n", wbctOffset);
+					mareep.WriteError("Could not find WBCT at 0x{0:X}.", wbctOffset);
 				}
 
 				reader.Step(4); // unused
@@ -388,7 +388,7 @@ namespace arookas {
 				var sceneCount = reader.ReadS32();
 
 				if (sceneCount != waveGroupCount) {
-					mareep.WriteError("WINF count ({0}) does not match WBCT count ({1}).\n", waveGroupCount, sceneCount);
+					mareep.WriteError("WINF count ({0}) does not match WBCT count ({1}).", waveGroupCount, sceneCount);
 				}
 
 				var sceneOffsets = reader.ReadS32s(sceneCount);
@@ -400,7 +400,7 @@ namespace arookas {
 					var waveInfoCount = reader.ReadS32();
 
 					if (waveInfoCount < 0) {
-						mareep.WriteError("Bad wave count '{0}' in wave group #{1}.\n", waveInfoCount, i);
+						mareep.WriteError("Bad wave count '{0}' in wave group #{1}.", waveInfoCount, i);
 					}
 
 					var waveInfoOffsets = reader.ReadS32s(waveInfoCount);
@@ -408,7 +408,7 @@ namespace arookas {
 					reader.Goto(sceneOffsets[i]);
 
 					if (reader.Read32() != SCNE) {
-						mareep.WriteError("Could not find SCNE at 0x{0:X}.\n", sceneOffsets[i]);
+						mareep.WriteError("Could not find SCNE at 0x{0:X}.", sceneOffsets[i]);
 					}
 
 					reader.Step(8); // unused
@@ -416,13 +416,13 @@ namespace arookas {
 					reader.Goto(cdfOffset);
 
 					if (reader.Read32() != C_DF) {
-						mareep.WriteError("Could not find C-DF at 0x{0:X}.\n", cdfOffset);
+						mareep.WriteError("Could not find C-DF at 0x{0:X}.", cdfOffset);
 					}
 
 					var waveidCount = reader.ReadS32();
 
 					if (waveidCount != waveInfoCount) {
-						mareep.WriteError("C-DF count ({0}) does not match wave-info count ({1}).\n", waveidCount, waveInfoCount);
+						mareep.WriteError("C-DF count ({0}) does not match wave-info count ({1}).", waveidCount, waveInfoCount);
 					}
 
 					var waveidOffsets = reader.ReadS32s(waveidCount);
@@ -444,7 +444,7 @@ namespace arookas {
 						var format = (WaveFormat)reader.Read8();
 
 						if (!format.IsDefined()) {
-							mareep.WriteError("Wave group #{0}: bad format '{1}' in wave #{2}.\n", i, (byte)format, j);
+							mareep.WriteError("Wave group #{0}: bad format '{1}' in wave #{2}.", i, (byte)format, j);
 						} else {
 							wave.Format = format;
 						}
@@ -452,7 +452,7 @@ namespace arookas {
 						var key = reader.Read8();
 
 						if (key < 0 || key > 127) {
-							mareep.WriteError("Wave group #{0}: bad root key '{1}' in wave #{2}.\n", i, key, j);
+							mareep.WriteError("Wave group #{0}: bad root key '{1}' in wave #{2}.", i, key, j);
 						} else {
 							wave.RootKey = key;
 						}
@@ -462,7 +462,7 @@ namespace arookas {
 						var sampleRate = reader.ReadF32();
 
 						if (sampleRate < 0.0f) {
-							mareep.WriteError("Wave group #{0}: bad sample rate '{1:F1}' in wave #{2}.\n", i, sampleRate, j);
+							mareep.WriteError("Wave group #{0}: bad sample rate '{1:F1}' in wave #{2}.", i, sampleRate, j);
 						} else {
 							wave.SampleRate = sampleRate;
 						}
@@ -470,7 +470,7 @@ namespace arookas {
 						var waveStart = reader.ReadS32();
 
 						if (waveStart < 0) {
-							mareep.WriteError("Wave group #{0}: bad wave start '{1}' in wave #{2}.\n", i, waveStart, j);
+							mareep.WriteError("Wave group #{0}: bad wave start '{1}' in wave #{2}.", i, waveStart, j);
 						} else {
 							wave.WaveStart = waveStart;
 						}
@@ -478,7 +478,7 @@ namespace arookas {
 						var waveSize = reader.ReadS32();
 
 						if (waveSize < 0) {
-							mareep.WriteError("Wave group #{0}: bad wave size '{1}' in wave #{2}.\n", i, waveSize, j);
+							mareep.WriteError("Wave group #{0}: bad wave size '{1}' in wave #{2}.", i, waveSize, j);
 						} else {
 							wave.WaveSize = waveSize;
 						}
@@ -488,7 +488,7 @@ namespace arookas {
 						var loopStart = reader.ReadS32();
 
 						if (loopStart < 0) {
-							mareep.WriteError("Wave group #{0}: bad loop start '{1}' in wave #{2}.\n", i, loopStart, j);
+							mareep.WriteError("Wave group #{0}: bad loop start '{1}' in wave #{2}.", i, loopStart, j);
 						} else {
 							wave.LoopStart = loopStart;
 						}
@@ -496,7 +496,7 @@ namespace arookas {
 						var loopEnd = reader.ReadS32();
 
 						if (loopEnd < 0) {
-							mareep.WriteError("Wave group #{0}: bad loop end '{1}' in wave #{2}.\n", i, loopEnd, j);
+							mareep.WriteError("Wave group #{0}: bad loop end '{1}' in wave #{2}.", i, loopEnd, j);
 						} else {
 							wave.LoopEnd = loopEnd;
 						}
