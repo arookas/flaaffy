@@ -49,21 +49,21 @@ namespace arookas {
 		public override int SampleCount { get { return mSampleCount; } }
 		public WaveFormat Format { get { return mFormat; } }
 
-		public RawWaveMixer(Stream stream, WaveFormat format, int sampleCount) {
+		public RawWaveMixer(Stream stream, WaveFormat format) {
+			if (stream == null) {
+				throw new ArgumentNullException("stream");
+			}
+
 			if (!format.IsDefined()) {
 				throw new ArgumentOutOfRangeException("format");
 			}
 
-			if (sampleCount < 0) {
-				throw new ArgumentOutOfRangeException("sampleCount");
-			}
-
 			mFormat = format;
-			mSampleCount = sampleCount;
+			mSampleCount = mareep.CalculateSampleCount(format, (int)stream.Length);
 			mReader = new aBinaryReader(stream, Endianness.Big);
 			mReader.PushAnchor();
 		}
-		public RawWaveMixer(Stream stream, Wave wave, WaveFormat format, int sampleCount) : this(stream, format, sampleCount) {
+		public RawWaveMixer(Stream stream, Wave wave, WaveFormat format) : this(stream, format) {
 			CopyWaveInfo(wave);
 		}
 

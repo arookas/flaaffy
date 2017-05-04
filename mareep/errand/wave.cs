@@ -3,10 +3,10 @@ using arookas.IO.Binary;
 using System;
 using System.IO;
 
-namespace arookas {
+namespace arookas.wave {
 
-	[Performer(Action.Wave)]
-	class WavePerformer : IPerformer {
+	[Errand(Errand.Wave)]
+	class WavePerformer : IErrand {
 
 		string mInput, mOutput;
 		IOFormat mInputFormat, mOutputFormat;
@@ -15,7 +15,7 @@ namespace arookas {
 
 		// raw
 		WaveFormat mRawInputFormat, mRawOutputFormat;
-		int mRawSampleCount, mRawSampleRate;
+		int mRawSampleRate;
 
 		// streams
 		bool mStreamLoop;
@@ -25,54 +25,55 @@ namespace arookas {
 
 		public void LoadParams(string[] arguments) {
 			var cmdline = new aCommandLine(arguments);
+			aCommandLineParameter parameter;
 
 			// input
-			var inputparam = mareep.GetLastCmdParam(cmdline, "-input");
+			parameter = mareep.GetLastCmdParam(cmdline, "-input");
 
-			if (inputparam == null) {
-				mareep.WriteError("Missing -input parameter.");
-			} else if (inputparam.Count == 0) {
-				mareep.WriteError("Missing input filename.");
+			if (parameter == null) {
+				mareep.WriteError("WAVE: missing -input parameter.");
+			} else if (parameter.Count == 0) {
+				mareep.WriteError("WAVE: missing argument for -input parameter.");
 			}
 
-			mInput = inputparam[0];
+			mInput = parameter[0];
 			mInputFormat = GetFormat(Path.GetExtension(mInput));
 
 			if (mInputFormat == IOFormat.Raw) {
-				if (inputparam.Count < 2) {
-					mareep.WriteError("Missing format for raw input.");
+				if (parameter.Count < 2) {
+					mareep.WriteError("WAVE: missing format for raw input.");
 				}
 
-				if (!Enum.TryParse(inputparam[1], true, out mRawInputFormat)) {
-					mareep.WriteError("Bad format '{0}' for raw input.", inputparam[1]);
+				if (!Enum.TryParse(parameter[1], true, out mRawInputFormat)) {
+					mareep.WriteError("WAVE: bad format '{0}' for raw input.", parameter[1]);
 				}
 			}
 
 			// output
-			var outputparam = mareep.GetLastCmdParam(cmdline, "-output");
+			parameter = mareep.GetLastCmdParam(cmdline, "-output");
 
-			if (outputparam == null) {
-				mareep.WriteError("Missing -output parameter.");
-			} else if (outputparam.Count == 0) {
-				mareep.WriteError("Missing output filename.");
+			if (parameter == null) {
+				mareep.WriteError("WAVE: missing -output parameter.");
+			} else if (parameter.Count == 0) {
+				mareep.WriteError("WAVE: missing argument for -output parameter.");
 			}
 
-			mOutput = outputparam[0];
+			mOutput = parameter[0];
 			mOutputFormat = GetFormat(Path.GetExtension(mOutput));
 
 			if (mOutputFormat == IOFormat.Raw) {
-				if (outputparam.Count < 2) {
-					mareep.WriteError("Missing format for raw output.");
+				if (parameter.Count < 2) {
+					mareep.WriteError("WAVE: missing format for raw output.");
 				}
 
-				if (!Enum.TryParse(outputparam[1], true, out mRawOutputFormat)) {
-					mareep.WriteError("Bad format '{0}' for raw output.", outputparam[1]);
+				if (!Enum.TryParse(parameter[1], true, out mRawOutputFormat)) {
+					mareep.WriteError("WAVE: bad format '{0}' for raw output.", parameter[1]);
 				}
 			} else if (mOutputFormat == IOFormat.AfcStream) {
-				if (outputparam.Count < 2) {
+				if (parameter.Count < 2) {
 					mStreamFormat = StreamFormat.Adpcm;
-				} else if (!Enum.TryParse(outputparam[1], true, out mStreamFormat)) {
-					mareep.WriteError("Bad format '{0}' for stream output.", outputparam[1]);
+				} else if (!Enum.TryParse(parameter[1], true, out mStreamFormat)) {
+					mareep.WriteError("WAVE: bad stream format '{0}'.", parameter[1]);
 				}
 			}
 
@@ -88,79 +89,64 @@ namespace arookas {
 			} else if (mInputFormat == IOFormat.AfcStream && mOutputFormat == IOFormat.MicrosoftWave) {
 				mMode = Mode.StreamToWav;
 			} else {
-				mareep.WriteError("Unsupported combination of input and output formats.");
+				mareep.WriteError("WAVE: unsupported combination of input and output formats.");
 			}
 
 			// mix mode
-			var mixmodeparam = mareep.GetLastCmdParam(cmdline, "-mix-mode");
+			parameter = mareep.GetLastCmdParam(cmdline, "-mix-mode");
 
-			if (mixmodeparam != null) {
-				if (mixmodeparam.Count < 1) {
-					mareep.WriteError("Bad -mix-mode parameter.");
+			if (parameter != null) {
+				if (parameter.Count < 1) {
+					mareep.WriteError("WAVE: bad -mix-mode parameter.");
 				}
 
-				if (!Enum.TryParse(mixmodeparam[0], true, out mMixerMode)) {
-					mareep.WriteError("Bad mixer mode '{0}' in -mix-mode parameter.", mixmodeparam[0]);
+				if (!Enum.TryParse(parameter[0], true, out mMixerMode)) {
+					mareep.WriteError("WAVE: bad mixer mode '{0}' in -mix-mode parameter.", parameter[0]);
 				}
-			}
-
-			// sample count
-			var samplecountparam = mareep.GetLastCmdParam(cmdline, "-sample-count");
-
-			if (samplecountparam != null) {
-				if (samplecountparam.Count < 1) {
-					mareep.WriteError("Bad -sample-count parameter.");
-				}
-
-				if (!Int32.TryParse(samplecountparam[0], out mRawSampleCount) || mRawSampleCount < 0) {
-					mareep.WriteError("Bad sample count '{0}' in -sample-count parameter.", samplecountparam[0]);
-				}
-			} else if (mInputFormat == IOFormat.Raw) {
-				mareep.WriteError("Missing -sample-count parameter for raw input.");
 			}
 
 			// sample rate
-			var samplerateparam = mareep.GetLastCmdParam(cmdline, "-sample-rate");
+			parameter = mareep.GetLastCmdParam(cmdline, "-sample-rate");
 
-			if (samplerateparam != null) {
-				if (samplecountparam.Count < 1) {
-					mareep.WriteError("Bad -sample-rate parameter.");
+			if (parameter != null) {
+				if (parameter.Count < 1) {
+					mareep.WriteError("WAVE: missing argument for -sample-rate parameter.");
 				}
 				
-				if (!Int32.TryParse(samplerateparam[0], out mRawSampleRate) || mRawSampleRate < 0) {
-					mareep.WriteError("Bad sample rate '{0}' in -sample-rate parameter.", samplerateparam[0]);
+				if (!Int32.TryParse(parameter[0], out mRawSampleRate) || mRawSampleRate < 0) {
+					mareep.WriteError("WAVE: bad sample rate '{0}'.", parameter[0]);
 				}
 			} else if (mInputFormat == IOFormat.Raw && mOutputFormat != IOFormat.Raw) {
-				mareep.WriteError("Missing -sample-rate parameter for raw input.");
+				mareep.WriteError("WAVE: missing -sample-rate parameter for raw input.");
 			}
 
 			// frame rate
-			var framerateparam = mareep.GetLastCmdParam(cmdline, "-frame-rate");
+			parameter = mareep.GetLastCmdParam(cmdline, "-frame-rate");
 
-			if (framerateparam != null) {
-				if (framerateparam.Count < 1) {
-					mareep.WriteError("Bad -frame-rate parameter.");
+			if (parameter != null) {
+				if (parameter.Count < 1) {
+					mareep.WriteError("WAVE: missing argument for -frame-rate parameter.");
 				}
 				
-				if (!Int32.TryParse(framerateparam[0], out mStreamFrameRate) || mStreamFrameRate < 0) {
-					mareep.WriteError("Bad frame rate '{0}' in -frame-rate parameter.", framerateparam[0]);
+				if (!Int32.TryParse(parameter[0], out mStreamFrameRate) || mStreamFrameRate < 0) {
+					mareep.WriteError("WAVE: bad frame rate '{0}'.", parameter[0]);
 				}
 			} else {
 				mStreamFrameRate = 30;
 			}
 
 			// loop
-			var loopparam = mareep.GetLastCmdParam(cmdline, "-loop");
+			parameter = mareep.GetLastCmdParam(cmdline, "-loop");
 
-			if (loopparam != null) {
+			if (parameter != null) {
 				mStreamLoop = true;
 
-				if (loopparam.Count < 1) {
-					mareep.WriteError("Bad -loop parameter.");
+				if (parameter.Count < 1) {
+					mareep.WriteError("WAVE: missing argument for -loop parameter.");
 				}
 
-				if (!Int32.TryParse(loopparam[0], out mStreamLoopStart) || mStreamLoopStart < 0) {
-					mareep.WriteError("Bad loop '{0}' in -loop parameter.", loopparam[0]);
+				if (!Int32.TryParse(parameter[0], out mStreamLoopStart) || mStreamLoopStart < 0) {
+					mareep.WriteError("WAVE: bad loop value '{0}'.", parameter[0]);
 				}
 			}
 		}
@@ -176,14 +162,14 @@ namespace arookas {
 						case Mode.WavToRaw: PerformWavToRaw(instream, outstream); break;
 						case Mode.WavToStream: PerformWavToStream(instream, outstream); break;
 						case Mode.StreamToWav: PerformStreamToWav(instream, outstream); break;
-						default: mareep.WriteError("Unimplemented mode '{0}'.", mMode); break;
+						default: mareep.WriteError("WAVE: unimplemented mode '{0}'.", mMode); break;
 					}
 				}
 			}
 		}
 
 		void PerformRawToRaw(Stream instream, Stream outstream) {
-			var mixer = new RawWaveMixer(instream, mRawInputFormat, mRawSampleCount);
+			var mixer = new RawWaveMixer(instream, mRawInputFormat);
 			var writer = new aBinaryWriter(outstream, Endianness.Big);
 
 			switch (mRawOutputFormat) {
@@ -194,10 +180,10 @@ namespace arookas {
 			}
 		}
 		void PerformRawToWav(Stream instream, Stream outstream) {
-			var mixer = new RawWaveMixer(instream, mRawInputFormat, mRawSampleCount);
+			var mixer = new RawWaveMixer(instream, mRawInputFormat);
 			var writer = new aBinaryWriter(outstream, Endianness.Little);
-			var dataSize = (mRawSampleCount * 2);
-
+			var dataSize = (mixer.SampleCount * 2);
+			
 			writer.WriteString("RIFF");
 			writer.WriteS32(36 + dataSize);
 			writer.WriteString("WAVE");
@@ -265,8 +251,7 @@ namespace arookas {
 
 			switch (mStreamFormat) {
 				case StreamFormat.Pcm: dataSize = (mixer.SampleCount * 4); break;
-				case StreamFormat.Adpcm: dataSize = ((mixer.SampleCount + 15) & ~15); break;
-				default: mareep.WriteError("AFC: unknown stream format '{0}'.", (int)mStreamFormat); break;
+				case StreamFormat.Adpcm: dataSize = (mareep.RoundUp16B(mixer.SampleCount) / 16 * 18); break;
 			}
 
 			writer.WriteS32(dataSize);
@@ -282,7 +267,6 @@ namespace arookas {
 			switch (mStreamFormat) {
 				case StreamFormat.Pcm: EncodeStreamPcm(mixer, writer); break;
 				case StreamFormat.Adpcm: EncodeStreamAdpcm(mixer, writer); break;
-				default: mareep.WriteError("AFC: unknown stream format '{0}'.", (int)mStreamFormat); break;
 			}
 
 			writer.WritePadding(32, 0);

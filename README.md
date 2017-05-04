@@ -24,19 +24,19 @@ As of now, _flaaffy_ toolkit contains a swiss-army-knife utility program called 
 ### mareep
 
 _mareep_ is utility program able to convert many audio-related formats.
-It is a command-line interface, where each feature is implemented as an "action".
+It is a command-line interface, where each feature is implemented as an "errand".
 The arguments follow this format:
 
 ```
-mareep -action <name> [<arguments>]
+mareep -errand <name> [<arguments>]
 ```
 
-The available actions are as follows:
+The available errands are as follows:
 
-|Action|Description|
-|------|-----------|
+|Errands|Description|
+|-------|-----------|
 |[shock](shock.md)|Converts instrument banks ("IBNK" or "bnk") to&#8209;and&#8209;fro XML and binary formats. Little endian and big endian are supported.|
 |[whap](whap.md)|Converts wave banks ("WSYS" or "ws") to&#8209;and&#8209;fro XML and binary formats. Little endian and big endian are supported. Automatically extracts and repacks the wave archives (.aw files). Includes PCM&nbsp;⇄&nbsp;ADPCM conversion.|
-|[wave](wave.md)|Standalone action to convert raw audio data PCM&nbsp;⇄&nbsp;ADPCM. Any combination of input and output formats is supported.|
+|[wave](wave.md)|Standalone errand to convert audio data between formats. Various raw and standard formats are supported.|
 |[cotton](cotton.md)|A dedicated BMS assembler. Able to compile BMS files from no&#8209;holds&#8209;barred assembly text. Features relocation, named labels, variables, embedded POD, and various other directives.|
 |[jolt](jolt.md)|Converts basic MIDI files to the cotton assembler language. Used to create custom music.|

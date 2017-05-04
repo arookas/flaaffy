@@ -1,7 +1,7 @@
 
 ## cotton
 
-The _cotton_ action assembles a text-based assembler language into a BMS file.
+The _cotton_ errand assembles a text-based assembler language into a BMS file.
 The format is inspired by traditional languages, such as x86 and PPC.
 No assumptions are made about what the user wants in the sequence: the language corresponds 1:1 with the binary format.
 The arguments are as follows:

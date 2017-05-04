@@ -1,7 +1,7 @@
 
 ## jolt
 
-The _jolt_ action converts a simple MIDI file to the cotton assembler language.
+The _jolt_ errand converts a simple MIDI file to the cotton assembler language.
 It supports format-0 and format-1 MIDI files and does not require any prior setup to the MIDI file.
 The arguments are as follows:
 
@@ -19,4 +19,4 @@ The MIDI is converted as follows:
 - Aftertouch and channel pressure events are ignored.
 - Only the MSB (coarse) controllers for volume and pan are used; the corresponding LSB (fine) controllers are ignored.
 
-> **Note:** refer to the _cotton_ action documentation for more information on compiling the assembler text to a BMS file.
+> **Note:** refer to the [_cotton_ errand documentation](cotton.md) for more information on compiling the assembler text to a BMS file.

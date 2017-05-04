@@ -50,4 +50,15 @@ namespace arookas {
 
 	}
 
+	static partial class mareep {
+
+		public static int RoundUp16B(int value) {
+			return ((value + 15) & ~15);
+		}
+		public static int RoundUp32B(int value) {
+			return ((value + 31) & ~31);
+		}
+
+	}
+
 }

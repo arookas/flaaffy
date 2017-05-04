@@ -8,10 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace arookas.SequenceAssembler {
+namespace arookas.cotton {
 
-	[Performer(Action.Cotton)]
-	class CottonPerformer : IPerformer {
+	[Errand(Errand.Cotton)]
+	class CottonErrand : IErrand {
 
 		string mInput, mOutput;
 		Endianness mEndianness;
@@ -23,9 +23,9 @@ namespace arookas.SequenceAssembler {
 			param = mareep.GetLastCmdParam(cmdline, "-input");
 
 			if (param == null) {
-				mareep.WriteError("Missing -input parameter.");
-			} else if (param.Count != 1) {
-				mareep.WriteError("Bad -input parameter.");
+				mareep.WriteError("COTTON: missing -input parameter.");
+			} else if (param.Count == 0) {
+				mareep.WriteError("COTTON: missing argument for -input parameter.");
 			} else {
 				mInput = param[0];
 			}
@@ -33,18 +33,14 @@ namespace arookas.SequenceAssembler {
 			param = mareep.GetLastCmdParam(cmdline, "-output");
 
 			if (param == null) {
-				mareep.WriteError("Missing -output parameter.");
-			} else if (param.Count != 1) {
-				mareep.WriteError("Bad -output parameter.");
+				mareep.WriteError("COTTON: missing -output parameter.");
+			} else if (param.Count == 0) {
+				mareep.WriteError("COTTON: missing argument for -output parameter.");
 			} else {
 				mOutput = param[0];
 			}
 
-			mEndianness = Endianness.Big;
-
-			if (mareep.GetLastCmdParam(cmdline, "-le") != null) {
-				mEndianness = Endianness.Little;
-			}
+			mEndianness = (mareep.GetLastCmdParam(cmdline, "-le") != null ? Endianness.Little : Endianness.Big);
 		}
 
 		public void Perform() {

@@ -19,7 +19,6 @@ The command-line arguments depending on the input and output formats.
 |---------|-----------|
 |-input _&lt;file&gt;_ [_&lt;format&gt;_]|Specifies the input file. If the file is raw audio, _&lt;format&gt;_ specifies the format of the audio data; see below for the available values.|
 |-output _&lt;file&gt;_ [_&lt;format&gt;_]|Specifies the output file. If the file is raw audio, _&lt;format&gt;_ specifies the format of the audio data; see below for the available values.|
-|-sample-count _&lt;count&gt;_|Number of samples to convert. Used only if the input file is raw audio.|
 |-sample-rate _&lt;rate&gt;_|Rate, in hertz, of the raw audio data. Used only when converting raw audio data to a WAV file.|
 |-frame-rate _&lt;rate&gt;_|Specifies the frame rate of the stream. Used only when creating streams. If omitted, the frame rate defaults to 30.|
 |-loop _&lt;start&gt;_|Enables looping and specifies which sample to which to loop back when hitting the end of the stream. Used only when creating streams. If omitted, the stream will not loop.|

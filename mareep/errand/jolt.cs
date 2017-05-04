@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace arookas.Jolt {
+namespace arookas.jolt {
 
-	[Performer(Action.Jolt)]
-	class JoltPerformer : MidiReader, IPerformer {
+	[Errand(Errand.Jolt)]
+	class JoltErrand : MidiReader, IErrand {
 
 		string mInput, mOutput;
 
@@ -16,7 +16,7 @@ namespace arookas.Jolt {
 		Track mRootTrack;
 		Track[] mChannelTracks;
 
-		public JoltPerformer() {
+		public JoltErrand() {
 			mRootTrack = new Track();
 			mChannelTracks = new Track[16];
 			for (var i = 0; i < 16; ++i) {
@@ -26,27 +26,27 @@ namespace arookas.Jolt {
 
 		public void LoadParams(string[] arguments) {
 			var cmdline = new aCommandLine(arguments);
-			aCommandLineParameter param;
+			aCommandLineParameter parameter;
 
-			param = mareep.GetLastCmdParam(cmdline, "-input");
+			parameter = mareep.GetLastCmdParam(cmdline, "-input");
 
-			if (param == null) {
-				mareep.WriteError("Missing -input parameter.");
-			} else if (param.Count < 1) {
-				mareep.WriteError("Bad -input parameter.");
+			if (parameter == null) {
+				mareep.WriteError("JOLT: missing -input parameter.");
+			} else if (parameter.Count == 0) {
+				mareep.WriteError("JOLT: missing argument for -input parameter.");
 			}
 
-			mInput = param[0];
+			mInput = parameter[0];
 
-			param = mareep.GetLastCmdParam(cmdline, "-output");
+			parameter = mareep.GetLastCmdParam(cmdline, "-output");
 
-			if (param == null) {
-				mareep.WriteError("Missing -output parameter.");
-			} else if (param.Count < 1) {
-				mareep.WriteError("Bad -output parameter.");
+			if (parameter == null) {
+				mareep.WriteError("JOLT: missing -output parameter.");
+			} else if (parameter.Count == 0) {
+				mareep.WriteError("JOLT: missing argument for -output parameter.");
 			}
 
-			mOutput = param[0];
+			mOutput = parameter[0];
 		}
 
 		public void Perform() {
@@ -54,7 +54,7 @@ namespace arookas.Jolt {
 				LoadMidi(instream);
 
 				if (Format == 2) {
-					mareep.WriteError("Format 2 MIDIs are not supported.");
+					mareep.WriteError("JOLT: format-2 MIDIs are not supported.");
 				}
 
 				LoadTracks();
@@ -179,7 +179,7 @@ namespace arookas.Jolt {
 		}
 
 		void WriteSeparator() {
-			mWriter.WriteLine("# ---------------------------------------------");
+			mWriter.WriteLine("# -----------------------------------------------------------------------------");
 		}
 		
 	}

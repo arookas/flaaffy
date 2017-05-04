@@ -67,9 +67,9 @@ namespace arookas {
 		public static Stream CreateFile(string filename, bool fatal = true) {
 			if (filename == null) {
 				if (fatal) {
-					mareep.WriteError("Null filename while creating file.\n");
+					mareep.WriteError("SYSTEM: null filename while creating file.");
 				} else {
-					mareep.WriteWarning("Null filename while creating file.\n");
+					mareep.WriteWarning("SYSTEM: null filename while creating file\n");
 				}
 
 				return null;
@@ -79,9 +79,9 @@ namespace arookas {
 				return File.Create(filename);
 			} catch {
 				if (fatal) {
-					mareep.WriteError("Failed to create file \"{0}\".\n", filename);
+					mareep.WriteError("SYSTEM: failed to create file '{0}'.", filename);
 				} else {
-					mareep.WriteWarning("Failed to create file \"{0}\".\n", filename);
+					mareep.WriteWarning("SYSTEM: failed to create file '{0}'\n", filename);
 				}
 
 				return null;
@@ -90,9 +90,9 @@ namespace arookas {
 		public static Stream OpenFile(string filename, bool fatal = true) {
 			if (filename == null) {
 				if (fatal) {
-					mareep.WriteError("Null filename while opening file.\n");
+					mareep.WriteError("SYSTEM: null filename while opening file.");
 				} else {
-					mareep.WriteWarning("Null filename while opening file.\n");
+					mareep.WriteWarning("SYSTEM: null filename while opening file\n");
 				}
 
 				return null;
@@ -102,9 +102,9 @@ namespace arookas {
 				return File.OpenRead(filename);
 			} catch {
 				if (fatal) {
-					mareep.WriteError("Failed to open file \"{0}\".\n", filename);
+					mareep.WriteError("SYSTEM: failed to open file '{0}'.", filename);
 				} else {
-					mareep.WriteWarning("Failed to open file \"{0}\".\n", filename);
+					mareep.WriteWarning("SYSTEM: failed to open file '{0}'\n", filename);
 				}
 
 				return null;
@@ -175,6 +175,10 @@ namespace arookas {
 
 			return String.Format("{0}{1}", srKeyLetters[keybase], octave);
 
+		}
+
+		public static string ToLowerString(this object obj) {
+			return obj.ToString().ToLowerInvariant();
 		}
 
 	}

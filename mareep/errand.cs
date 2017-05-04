@@ -11,7 +11,7 @@ using System.Xml;
 
 namespace arookas {
 
-	enum Action {
+	enum Errand {
 
 		Shock,
 		Whap,
@@ -21,7 +21,7 @@ namespace arookas {
 
 	}
 
-	interface IPerformer {
+	interface IErrand {
 
 		void LoadParams(string[] arguments);
 		void Perform();
@@ -29,62 +29,62 @@ namespace arookas {
 	}
 
 	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
-	class PerformerAttribute : Attribute {
+	class ErrandAttribute : Attribute {
 
-		Action mAction;
+		Errand mErrand;
 
-		public Action Action { get { return mAction; } }
+		public Errand Errand { get { return mErrand; } }
 
-		public PerformerAttribute(Action action) {
-			if (!action.IsDefined()) {
-				throw new ArgumentOutOfRangeException("action");
+		public ErrandAttribute(Errand errand) {
+			if (!errand.IsDefined()) {
+				throw new ArgumentOutOfRangeException("errand");
 			}
 
-			mAction = action;
+			mErrand = errand;
 		}
 
-		static Dictionary<Action, Type> sPerformers;
+		static Dictionary<Errand, Type> sErrands;
 
-		public static void GatherPerformersInAssembly() {
-			GatherPerformersInAssembly(Assembly.GetExecutingAssembly());
+		public static void GatherErrandsInAssembly() {
+			GatherErrandsInAssembly(Assembly.GetExecutingAssembly());
 		}
-		public static void GatherPerformersInAssembly(Assembly assembly) {
-			if (sPerformers == null) {
-				sPerformers = new Dictionary<Action, Type>(32);
+		public static void GatherErrandsInAssembly(Assembly assembly) {
+			if (sErrands == null) {
+				sErrands = new Dictionary<Errand, Type>(32);
 			}
 
 			var query =
 				from type in assembly.GetTypes()
 				where !type.IsAbstract
-				where type.GetInterfaces().Contains(typeof(IPerformer)) // needs to implement IPerformer
+				where type.GetInterfaces().Contains(typeof(IErrand)) // needs to implement IErrand
 				where type.GetConstructor(Type.EmptyTypes) != null // requires a parameterless constructor
-				let attribute = type.GetCustomAttribute<PerformerAttribute>()
+				let attribute = type.GetCustomAttribute<ErrandAttribute>()
 				where attribute != null
-				let action = attribute.Action
+				let action = attribute.Errand
 				select new { action, type };
 
 			foreach (var result in query) {
-				sPerformers[result.action] = result.type;
+				sErrands[result.action] = result.type;
 			}
 		}
 
-		public static IPerformer CreatePerformer(Action action) {
-			if (sPerformers == null) {
-				GatherPerformersInAssembly();
+		public static IErrand CreateErrand(Errand errand) {
+			if (sErrands == null) {
+				GatherErrandsInAssembly();
 			}
 
 			Type type;
 
-			if (!sPerformers.TryGetValue(action, out type)) {
+			if (!sErrands.TryGetValue(errand, out type)) {
 				return null;
 			}
 
-			return (Activator.CreateInstance(type) as IPerformer);
+			return (Activator.CreateInstance(type) as IErrand);
 		}
 
 	}
 
-	abstract class InputOutputPerformer : IPerformer {
+	abstract class SimpleConverterErrand : IErrand {
 
 		protected string mInputFile, mOutputFile;
 		protected IOFormat mInputFormat, mOutputFormat;
@@ -180,31 +180,35 @@ namespace arookas {
 
 	static partial class mareep {
 
-		static Action ReadAction(string[] arguments) {
+		static Errand ReadErrand(string[] arguments) {
 			var cmdline = new aCommandLine(arguments);
 
-			var param = mareep.GetLastCmdParam(cmdline, "-action");
+			var parameter = mareep.GetLastCmdParam(cmdline, "-errand");
 
-			if (param == null) {
-				mareep.WriteError("Missing -action parameter.");
+			if (parameter == null) {
+				mareep.WriteError("SYSTEM: missing -errand parameter.");
 			}
 
-			Action action;
-
-			if (!Enum.TryParse(param[0], true, out action)) {
-				mareep.WriteError("Unknown action \"{0}\".", param[0]);
+			if (parameter.Count == 0) {
+				mareep.WriteError("SYSTEM: missing errand name.");
 			}
 
-			return action;
+			Errand errand;
+
+			if (!Enum.TryParse(parameter[0], true, out errand)) {
+				mareep.WriteError("SYSTEM: unknown errand '{0}'.", parameter[0]);
+			}
+
+			return errand;
 		}
-		static IPerformer InitPerformer(Action action) {
-			var performer = PerformerAttribute.CreatePerformer(action);
+		static IErrand InitErrand(Errand errand) {
+			var instance = ErrandAttribute.CreateErrand(errand);
 
-			if (performer == null) {
-				mareep.WriteError("Unknown action \"{0}\".\n", action);
+			if (instance == null) {
+				mareep.WriteError("SYSTEM: unknown errand '{0}'.", errand);
 			}
 
-			return performer;
+			return instance;
 		}
 
 	}

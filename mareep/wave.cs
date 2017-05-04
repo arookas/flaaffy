@@ -110,14 +110,7 @@ namespace arookas {
 		}
 
 		public Wave() {
-			mFormat = WaveFormat.Pcm16;
-			mRootKey = 60;
-			mSampleRate = 32000.0f;
-			mLoop = false;
-			mLoopStart = 0;
-			mLoopEnd = 0;
 			mFileName = "";
-			mWaveId = 0;
 		}
 
 	}
@@ -264,6 +257,21 @@ namespace arookas {
 		Adpcm2,
 		Pcm8,
 		Pcm16,
+	}
+
+	static partial class mareep {
+
+		public static int CalculateSampleCount(WaveFormat format, int size) {
+			switch (format) {
+				case WaveFormat.Pcm8: return size;
+				case WaveFormat.Pcm16: return (size / 2);
+				case WaveFormat.Adpcm2: return (size / 5 * 16);
+				case WaveFormat.Adpcm4: return (size / 9 * 16);
+			}
+
+			throw new ArgumentOutOfRangeException("format");
+		}
+
 	}
 
 }
