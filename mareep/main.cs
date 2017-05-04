@@ -5,7 +5,7 @@ namespace arookas {
 
 	static partial class mareep {
 
-		static Version sVersion = new Version(0, 3);
+		static Version sVersion = new Version(0, 4);
 		
 		static void Main(string[] arguments) {
 			Console.Title = String.Format("mareep v{0} arookas", sVersion);
