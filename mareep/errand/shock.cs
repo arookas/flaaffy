@@ -862,7 +862,7 @@ namespace arookas {
 		protected const string cOscSquareRoot = "square-root";
 		protected const string cOscSampleCell = "sample-cell";
 		protected const string cOscTime = "time";
-		protected const string cOscAmount = "amount";
+		protected const string cOscOffset = "offset";
 		protected const string cOscLoop = "loop";
 		protected const string cOscLoopDest = "dest";
 		protected const string cOscHold = "hold";
@@ -1171,25 +1171,25 @@ namespace arookas {
 					case cOscLinear: {
 						table.mode = InstrumentOscillatorTableMode.Linear;
 						table.time = (child.Attribute(cOscTime) | 0);
-						table.amount = (child.Attribute(cOscAmount) | 0);
+						table.amount = (child.Attribute(cOscOffset) | 0);
 						break;
 					}
 					case cOscSquare: {
 						table.mode = InstrumentOscillatorTableMode.Square;
 						table.time = (child.Attribute(cOscTime) | 0);
-						table.amount = (child.Attribute(cOscAmount) | 0);
+						table.amount = (child.Attribute(cOscOffset) | 0);
 						break;
 					}
 					case cOscSquareRoot: {
 						table.mode = InstrumentOscillatorTableMode.SquareRoot;
 						table.time = (child.Attribute(cOscTime) | 0);
-						table.amount = (child.Attribute(cOscAmount) | 0);
+						table.amount = (child.Attribute(cOscOffset) | 0);
 						break;
 					}
 					case cOscSampleCell: {
 						table.mode = InstrumentOscillatorTableMode.SampleCell;
 						table.time = (child.Attribute(cOscTime) | 0);
-						table.amount = (child.Attribute(cOscAmount) | 0);
+						table.amount = (child.Attribute(cOscOffset) | 0);
 						break;
 					}
 					case cOscLoop: {
@@ -1424,7 +1424,7 @@ namespace arookas {
 				case InstrumentOscillatorTableMode.Stop: break;
 				default: {
 					mWriter.WriteAttributeString(cOscTime, table.time);
-					mWriter.WriteAttributeString(cOscAmount, table.amount);
+					mWriter.WriteAttributeString(cOscOffset, table.amount);
 					break;
 				}
 			}
