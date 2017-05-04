@@ -235,8 +235,8 @@ Sense effects modulate a property linearly based on the specified trigger and ar
 |`target`|Mandatory. Specifies the target property of the effect. May be one of the following values: _volume_, _pitch_, _pan_, _fxmix_, _dolby_.|
 |`trigger`|Specifies what value to use as the trigger. May be one of the following values: _key_, _velocity_.|
 |`center‑key`|Specifies the center key. The target property is modulated based on whether the input from the trigger is above or below this value. The value may be either a key number, key name, or velocity. Defaults to 127.|
-|`range‑lo`||
-|`range‑hi`||
+|`range‑lo`|Specifies the bottom range of the effect, specified in decimal. Defaults to zero.|
+|`range‑hi`|Specifies the top range of the effect, specified in decimal. Defaults to one.|
 
 How the property is modulated depends on the _trigger value_ and the _center key_:
 
