@@ -91,40 +91,42 @@ namespace arookas {
 
 		public virtual void LoadParams(string[] arguments) {
 			var cmdline = new aCommandLine(arguments);
-			var inputParam = mareep.GetLastCmdParam(cmdline, "-input");
+			aCommandLineParameter parameter;
 
-			if (inputParam == null) {
-				mareep.WriteError("Missing -input parameter.");
+			parameter = mareep.GetLastCmdParam(cmdline, "-input");
+
+			if (parameter == null) {
+				mareep.WriteError("SYSTEM: missing -input parameter.");
 			}
 
-			if (inputParam.Count != 2) {
-				mareep.WriteError("-input parameter requires two arguments.");
+			if (parameter.Count != 2) {
+				mareep.WriteError("SYSTEM: -input parameter requires two arguments.");
 			}
 
-			mInputFile = inputParam[0];
+			mInputFile = parameter[0];
 
 			if (!File.Exists(mInputFile)) {
-				mareep.WriteError("Input file \"{0}\" could not be found.", mInputFile);
+				mareep.WriteError("SYSTEM: input file '{0}' could not be found.", mInputFile);
 			}
 
-			if (!Enum.TryParse(inputParam[1], true, out mInputFormat)) {
-				mareep.WriteError("Unknown input format \"{0}\".", inputParam[1]);
+			if (!Enum.TryParse(parameter[1], true, out mInputFormat)) {
+				mareep.WriteError("SYSTEM: unknown input format '{0}'.", parameter[1]);
 			}
 
-			var outputParam = mareep.GetLastCmdParam(cmdline, "-output");
+			parameter = mareep.GetLastCmdParam(cmdline, "-output");
 
-			if (outputParam == null) {
-				mareep.WriteError("Missing -output parameter.");
+			if (parameter == null) {
+				mareep.WriteError("SYSTEM: missing -output parameter.");
 			}
 
-			if (outputParam.Count != 2) {
-				mareep.WriteError("-output parameter requires two arguments.");
+			if (parameter.Count != 2) {
+				mareep.WriteError("SYSTEM: -output parameter requires two arguments.");
 			}
 
-			mOutputFile = outputParam[0];
+			mOutputFile = parameter[0];
 
-			if (!Enum.TryParse(outputParam[1], true, out mOutputFormat)) {
-				mareep.WriteError("Unknown output format \"{0}\".", outputParam[1]);
+			if (!Enum.TryParse(parameter[1], true, out mOutputFormat)) {
+				mareep.WriteError("SYSTEM: unknown output format '{0}'.", parameter[1]);
 			}
 		}
 		public abstract void Perform();
