@@ -822,6 +822,19 @@ namespace arookas {
 		public int time;
 		public int amount;
 
+		public override bool Equals(object obj) {
+			if (obj == null || !(obj is InstrumentOscillatorTable)) {
+				return false;
+			}
+
+			var table = (InstrumentOscillatorTable)obj;
+
+			return (this == table);
+		}
+		public override int GetHashCode() {
+			return ((int)mode * time * amount);
+		}
+
 		public static bool operator ==(InstrumentOscillatorTable left, InstrumentOscillatorTable right) {
 			return (
 				left.mode == right.mode &&
