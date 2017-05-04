@@ -413,7 +413,7 @@ namespace arookas {
 			mWriter.WriteS32(0); // unused
 			mWriter.WriteS32(sceneOffset);
 			mWriter.WriteS32(sceneOffset + 32);
-			mWriter.WriteS32(sceneOffset + 48);
+			mWriter.WriteS32(sceneOffset + 64);
 			mWriter.WritePadding(32, 0);
 		}
 		void WriteWave(Wave wave) {
