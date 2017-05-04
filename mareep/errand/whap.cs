@@ -657,6 +657,7 @@ namespace arookas {
 			}
 
 			mWriter.WriteEndElement();
+			mWriter.Flush();
 		}
 		void WriteWaveGroup(WaveGroup waveGroup) {
 			mWriter.WriteStartElement(cWaveGroup);

@@ -1252,6 +1252,7 @@ namespace arookas {
 			mBank = obj;
 
 			WriteBank();
+			mWriter.Flush();
 
 			return obj;
 		}
