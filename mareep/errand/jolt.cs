@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -10,11 +11,14 @@ namespace arookas.jolt {
 	class JoltErrand : MidiReader, IErrand {
 
 		string mInput, mOutput;
+		long mLoop;
+		LoopTimeUnit mLoopTimeUnit;
 
 		StreamWriter mWriter;
 
 		Track mRootTrack;
 		Track[] mChannelTracks;
+		bool[] mChannelOpen;
 
 		public JoltErrand() {
 			mRootTrack = new Track();
@@ -22,6 +26,8 @@ namespace arookas.jolt {
 			for (var i = 0; i < 16; ++i) {
 				mChannelTracks[i] = new Track();
 			}
+			mChannelOpen = new bool[16];
+			mLoop = -1;
 		}
 
 		public void LoadParams(string[] arguments) {
@@ -47,6 +53,40 @@ namespace arookas.jolt {
 			}
 
 			mOutput = parameter[0];
+
+			parameter = mareep.GetLastCmdParam(cmdline, "-loop");
+
+			if (parameter != null) {
+				if (parameter.Count == 0) {
+					mLoop = 0;
+					mLoopTimeUnit = LoopTimeUnit.Pulses;
+				}
+
+				if (parameter.Count > 0 && !Int64.TryParse(parameter[0], NumberStyles.None, null, out mLoop)) {
+					mareep.WriteError("JOLT: bad loop value '{0}'.", parameter[0]);
+				}
+
+				if (parameter.Count > 1) {
+					switch (parameter[1].ToLowerInvariant()) {
+						case "pulses":
+						case "ticks": {
+							mLoopTimeUnit = LoopTimeUnit.Pulses;
+							break;
+						}
+						case "beats":
+						case "quarters": {
+							mLoopTimeUnit = LoopTimeUnit.Beats;
+							break;
+						}
+						case "bars":
+						case "measures": {
+							mLoopTimeUnit = LoopTimeUnit.Measures;
+							break;
+						}
+						default: mareep.WriteError("JOLT: bad time unit '{0}'.", parameter[1]); break;
+					}
+				}
+			}
 		}
 
 		public void Perform() {
@@ -55,6 +95,17 @@ namespace arookas.jolt {
 
 				if (Format == 2) {
 					mareep.WriteError("JOLT: format-2 MIDIs are not supported.");
+				}
+
+				mareep.WriteMessage("Format-{0} MIDI {1} division {2} tracks\n", Format, Division, TrackCount);
+
+				if (mLoop >= 0) {
+					switch (mLoopTimeUnit) {
+						case LoopTimeUnit.Beats: mLoop *= Division; break;
+						case LoopTimeUnit.Measures: mLoop *= (Division * 4); break;
+					}
+
+					mareep.WriteMessage("Loop enabled: {0} ticks\n", mLoop, Division);
 				}
 
 				LoadTracks();
@@ -71,7 +122,7 @@ namespace arookas.jolt {
 				mWriter.WriteLine();
 				mWriter.WriteLine("ROOT_TRACK_BEGIN:");
 				for (var i = 0; i < 16; ++i) {
-					if (mChannelTracks[i].Count == 0) {
+					if (!mChannelOpen[i]) {
 						continue;
 					}
 
@@ -85,8 +136,13 @@ namespace arookas.jolt {
 				mWriter.WriteLine("ROOT_TRACK_END:");
 				mWriter.WriteLine();
 
+				if (mLoop >= 0) {
+					mWriter.WriteLine(".undefinelabel LOOP");
+					mWriter.WriteLine();
+				}
+
 				for (var i = 0; i < 16; ++i) {
-					if (mChannelTracks[i].Count == 0) {
+					if (!mChannelOpen[i]) {
 						continue;
 					}
 
@@ -97,6 +153,12 @@ namespace arookas.jolt {
 					mChannelTracks[i].Write(mWriter);
 					mWriter.WriteLine("TRACK_{0}_END:", i);
 					mWriter.WriteLine();
+
+					if (mLoop >= 0) {
+						mWriter.WriteLine(".undefinelabel LOOP");
+						mWriter.WriteLine();
+					}
+
 				}
 
 				mWriter.Flush();
@@ -107,8 +169,19 @@ namespace arookas.jolt {
 			EventInfo ev;
 			var duration = 0L;
 
+			if (mLoop >= 0) {
+				mRootTrack.AddEvent(mLoop, "LOOP: # -----------------------------------------------------------------------");
+
+				for (var i = 0; i < 16; ++i) {
+					if (mLoop >= 0) {
+						mChannelTracks[i].AddEvent(mLoop, "LOOP: # -----------------------------------------------------------------------");
+					}
+				}
+			}
+
 			for (var i = 0; i < TrackCount; ++i) {
 				GotoTrack(i);
+
 				var time = 0L;
 
 				while (ReadEvent(out ev)) {
@@ -136,33 +209,42 @@ namespace arookas.jolt {
 				}
 			}
 
-			mRootTrack.AddEvent(duration, "finish");
+			var finalcommand = (mLoop >= 0 ? "jmp @LOOP" : "finish");
+
+			mRootTrack.AddEvent(duration, finalcommand);
 
 			for (var i = 0; i < 16; ++i) {
-				if (mChannelTracks[i].Count == 0) {
+				if (!mChannelOpen[i]) {
 					continue;
 				}
 
-				mChannelTracks[i].AddEvent(duration, "finish");
+				mChannelTracks[i].AddEvent(duration, finalcommand);
 			}
 		}
 
 		void ReadNoteOn(long time, EventInfo ev) {
 			if (ev.velocity > 0) {
 				mChannelTracks[ev.channel].AddNoteOn(time, ev.key, ev.velocity);
+				mChannelOpen[ev.channel] = true;
 			} else {
 				ReadNoteOff(time, ev);
 			}
 		}
 		void ReadNoteOff(long time, EventInfo ev) {
 			mChannelTracks[ev.channel].AddNoteOff(time, ev.key);
+			mChannelOpen[ev.channel] = true;
 		}
 		void ReadControlChange(long time, EventInfo ev) {
+			var open = true;
+
 			switch (ev.controller) {
 				case 7: mChannelTracks[ev.channel].AddEvent(time, "timedparam 0, {0}s", ev.value); break;
 				case 10: mChannelTracks[ev.channel].AddEvent(time, "timedparam 3, {0}s", ev.value); break;
 				case 32: mChannelTracks[ev.channel].AddEvent(time, "load rbank, {0}b", ev.value); break;
+				default: open = false; break;
 			}
+
+			mChannelOpen[ev.channel] |= open;
 		}
 		void ReadProgramChange(long time, EventInfo ev) {
 			var program = ev.program;
@@ -170,9 +252,11 @@ namespace arookas.jolt {
 				program = (228 + (program % 12));
 			}
 			mChannelTracks[ev.channel].AddEvent(time, "load rprogram, {0}b", program);
+			mChannelOpen[ev.channel] = true;
 		}
 		void ReadPitchWheel(long time, EventInfo ev) {
 			mChannelTracks[ev.channel].AddEvent(time, "timedparam 1, {0}h", (ev.pitch - 8192));
+			mChannelOpen[ev.channel] = true;
 		}
 		void ReadTempo(long time, EventInfo ev) {
 			mRootTrack.AddEvent(time, "tempo {0}h", (60000000 / ev.tempo));
@@ -181,7 +265,15 @@ namespace arookas.jolt {
 		void WriteSeparator() {
 			mWriter.WriteLine("# -----------------------------------------------------------------------------");
 		}
-		
+
+		enum LoopTimeUnit {
+
+			Pulses,
+			Beats,
+			Measures,
+
+		}
+
 	}
 
 	class Track {
