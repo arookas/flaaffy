@@ -271,6 +271,7 @@ namespace arookas {
 						wave.LoopEnd = loopEnd;
 					}
 
+					var sampleCount = mReader.ReadS32();
 					wave.SampleCount = mareep.CalculateSampleCount(format, waveSize);
 
 					if (loopStart > loopEnd) {
@@ -284,6 +285,9 @@ namespace arookas {
 					if (loopEnd > wave.SampleCount) {
 						mareep.WriteWarning("WSYS: group #{0}: wave #{1}: loop end '{2}' is greater than sample count '{3}'.\n", i, j, loopEnd, wave.SampleCount);
 					}
+
+					wave.A = mReader.ReadS16();
+					wave.B = mReader.ReadS16();
 
 					// rest of the fields are unknown or runtime
 
@@ -429,8 +433,8 @@ namespace arookas {
 			mWriter.WriteS32(wave.Loop ? wave.LoopStart : 0);
 			mWriter.WriteS32(wave.Loop ? wave.LoopEnd : 0);
 			mWriter.WriteS32(wave.SampleCount);
-			mWriter.WriteS16(0); // unused?
-			mWriter.WriteS16(0); // unused?
+			mWriter.WriteS16((short)wave.A); // unused?
+			mWriter.WriteS16((short)wave.B); // unused?
 			mWriter.Write32(0); // runtime (load-flag pointer)
 			mWriter.Write32(0x1D8); // unknown
 		}
@@ -623,6 +627,14 @@ namespace arookas {
 				return null;
 			}
 
+			var xa = xwave.Attribute("a");
+			var xb = xwave.Attribute("b");
+
+			if (xa != null && xb != null) {
+				wave.A = xa;
+				wave.B = xb;
+			}
+
 			return wave;
 		}
 
@@ -684,6 +696,9 @@ namespace arookas {
 				mWriter.WriteAttributeString(cWaveLoopStart, wave.LoopStart);
 				mWriter.WriteAttributeString(cWaveLoopEnd, wave.LoopEnd);
 			}
+
+			mWriter.WriteAttributeString("a", wave.A);
+			mWriter.WriteAttributeString("b", wave.B);
 
 			mWriter.WriteEndElement();
 		}
