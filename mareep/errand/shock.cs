@@ -1258,6 +1258,7 @@ namespace arookas {
 
 		void WriteBank() {
 			mWriter.WriteStartElement(cBank);
+			mWriter.WriteAttributeString(cVirtualNumber, mBank.VirtualNumber);
 
 			for (var program = 0; program < mBank.Capacity; ++program) {
 				if (mBank[program] == null) {
