@@ -286,8 +286,8 @@ namespace arookas {
 						mareep.WriteWarning("WSYS: group #{0}: wave #{1}: loop end '{2}' is greater than sample count '{3}'.\n", i, j, loopEnd, wave.SampleCount);
 					}
 
-					wave.A = mReader.ReadS16();
-					wave.B = mReader.ReadS16();
+					wave.HistoryLast = mReader.ReadS16();
+					wave.HistoryPenult = mReader.ReadS16();
 
 					// rest of the fields are unknown or runtime
 
@@ -427,14 +427,30 @@ namespace arookas {
 			mWriter.Write8((byte)wave.RootKey);
 			mWriter.WritePadding(4, 0);
 			mWriter.WriteF32(wave.SampleRate);
+
 			mWriter.WriteS32(wave.WaveStart);
 			mWriter.WriteS32(wave.WaveSize);
-			mWriter.WriteS32(wave.Loop ? -1 : 0);
-			mWriter.WriteS32(wave.Loop ? wave.LoopStart : 0);
-			mWriter.WriteS32(wave.Loop ? wave.LoopEnd : 0);
+
+			if (wave.Loop) {
+				mWriter.WriteS32(-1);
+				mWriter.WriteS32(wave.LoopStart);
+				mWriter.WriteS32(wave.LoopEnd);
+			} else {
+				mWriter.WriteS32(0);
+				mWriter.WriteS32(0);
+				mWriter.WriteS32(0);
+			}
+
 			mWriter.WriteS32(wave.SampleCount);
-			mWriter.WriteS16((short)wave.A); // unused?
-			mWriter.WriteS16((short)wave.B); // unused?
+
+			if (wave.Loop) {
+				mWriter.WriteS16((short)wave.HistoryLast);
+				mWriter.WriteS16((short)wave.HistoryPenult);
+			} else {
+				mWriter.WriteS16(0);
+				mWriter.WriteS16(0);
+			}
+
 			mWriter.Write32(0); // runtime (load-flag pointer)
 			mWriter.Write32(0x1D8); // unknown
 		}
@@ -627,14 +643,6 @@ namespace arookas {
 				return null;
 			}
 
-			var xa = xwave.Attribute("a");
-			var xb = xwave.Attribute("b");
-
-			if (xa != null && xb != null) {
-				wave.A = xa;
-				wave.B = xb;
-			}
-
 			return wave;
 		}
 
@@ -696,9 +704,6 @@ namespace arookas {
 				mWriter.WriteAttributeString(cWaveLoopStart, wave.LoopStart);
 				mWriter.WriteAttributeString(cWaveLoopEnd, wave.LoopEnd);
 			}
-
-			mWriter.WriteAttributeString("a", wave.A);
-			mWriter.WriteAttributeString("b", wave.B);
 
 			mWriter.WriteEndElement();
 		}
@@ -767,17 +772,20 @@ namespace arookas {
 							mixer.MixerMode = mMixerMode;
 							mixer.CopyWaveInfo(wave);
 
-							switch (wave.Format) {
-								case WaveFormat.Pcm8: mixer.WritePcm8(writer); break;
-								case WaveFormat.Pcm16: mixer.WritePcm16(writer); break;
-								case WaveFormat.Adpcm2: mixer.WriteAdpcm2(writer); break;
-								case WaveFormat.Adpcm4: mixer.WriteAdpcm4(writer); break;
+							if (wave.Loop && wave.LoopStart > 0) {
+								int last, penult;
+
+								mixer.CalculateHistory(wave.LoopStart, wave.Format, out last, out penult);
+
+								wave.HistoryLast = last;
+								wave.HistoryPenult = penult;
 							}
 
+							mixer.Write(wave.Format, writer);
 							wave.WaveSize = ((int)writer.Position - wave.WaveStart);
 							writer.WritePadding(32, 0);
 
-							mareep.WriteMessage(" #{0:X4} '{1,-35}' (0x{2:X6} 0x{3:X6})\n", wave.WaveId, Path.GetFileName(wave.FileName), wave.WaveStart, wave.WaveSize);
+							mareep.WriteMessage(" #{0:X4} '{1,-35}' (0x{2:X6} 0x{3:X6}) ({4} 0x{5:X4} 0x{6:X4})\n", wave.WaveId, Path.GetFileName(wave.FileName), wave.WaveStart, wave.WaveSize, (wave.Loop ? 'o' : 'x'), wave.HistoryLast, wave.HistoryPenult);
 						}
 					}
 				}

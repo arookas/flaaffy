@@ -12,6 +12,7 @@ namespace arookas {
 		float mSampleRate;
 		bool mLoop;
 		int mLoopStart, mLoopEnd;
+		int mHistoryLast, mHistoryPenult;
 		int mWaveStart, mWaveSize, mSampleCount;
 		string mFileName;
 		int mWaveId;
@@ -64,6 +65,14 @@ namespace arookas {
 				mLoopEnd = value;
 			}
 		}
+		public int HistoryLast {
+			get { return mHistoryLast; }
+			set { mHistoryLast = value; }
+		}
+		public int HistoryPenult {
+			get { return mHistoryPenult; }
+			set { mHistoryPenult = value; }
+		}
 		public int WaveStart {
 			get { return mWaveStart; }
 			set {
@@ -108,9 +117,6 @@ namespace arookas {
 				mWaveId = value;
 			}
 		}
-
-		public int A { get; set; }
-		public int B { get; set; }
 
 		public Wave() {
 			mFileName = "";

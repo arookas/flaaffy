@@ -172,12 +172,7 @@ namespace arookas.wave {
 			var mixer = new RawWaveMixer(instream, mRawInputFormat);
 			var writer = new aBinaryWriter(outstream, Endianness.Big);
 
-			switch (mRawOutputFormat) {
-				case WaveFormat.Pcm8: mixer.WritePcm8(writer); break;
-				case WaveFormat.Pcm16: mixer.WritePcm16(writer); break;
-				case WaveFormat.Adpcm2: mixer.WriteAdpcm2(writer); break;
-				case WaveFormat.Adpcm4: mixer.WriteAdpcm4(writer); break;
-			}
+			mixer.Write(mRawOutputFormat, writer);
 		}
 		void PerformRawToWav(Stream instream, Stream outstream) {
 			var mixer = new RawWaveMixer(instream, mRawInputFormat);
@@ -197,20 +192,14 @@ namespace arookas.wave {
 			writer.Write16(16); // bit depth
 			writer.WriteString("data");
 			writer.WriteS32(dataSize);
-			mixer.WritePcm16(writer);
+			mixer.Write(WaveFormat.Pcm16, writer);
 		}
 		void PerformWavToRaw(Stream instream, Stream outstream) {
 			var mixer = new MicrosoftWaveMixer(instream);
 			var writer = new aBinaryWriter(outstream, Endianness.Big);
 
 			mixer.MixerMode = mMixerMode;
-
-			switch (mRawOutputFormat) {
-				case WaveFormat.Pcm8: mixer.WritePcm8(writer); break;
-				case WaveFormat.Pcm16: mixer.WritePcm16(writer); break;
-				case WaveFormat.Adpcm2: mixer.WriteAdpcm2(writer); break;
-				case WaveFormat.Adpcm4: mixer.WriteAdpcm4(writer); break;
-			}
+			mixer.Write(mRawOutputFormat, writer);
 		}
 		void PerformStreamToWav(Stream instream, Stream outstream) {
 			var reader = new aBinaryReader(instream, Endianness.Big);
