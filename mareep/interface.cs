@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.IO;
+using System.Text;
 
 namespace arookas {
 
@@ -179,6 +180,53 @@ namespace arookas {
 
 		public static string ToLowerString(this object obj) {
 			return obj.ToString().ToLowerInvariant();
+		}
+
+		public static string[] GetPathComponents(string path) {
+			return path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar, Path.VolumeSeparatorChar);
+		}
+		public static string GetRelativePath(string basepath, string path) {
+			const StringComparison cComparison = StringComparison.InvariantCultureIgnoreCase;
+
+			if (!Path.IsPathRooted(path)) {
+				return path;
+			}
+
+			if (!Path.IsPathRooted(basepath)) {
+				basepath = Path.GetFullPath(basepath);
+			}
+
+			var relativepath = new StringBuilder(path.Length);
+			var basepaths = mareep.GetPathComponents(basepath);
+			var paths = mareep.GetPathComponents(path);
+			var maxlevel = System.Math.Min(basepaths.Length, paths.Length);
+
+			if (basepaths.Length < 1 || paths.Length < 1) {
+				return path;
+			}
+
+			int level;
+
+			for (level = 0; level < maxlevel && basepaths[level].Equals(paths[level], cComparison); ++level);
+
+			if (level == 0) {
+				return path;
+			}
+
+			for (var i = level; i < basepaths.Length; ++i) {
+				relativepath.Append("..");
+				relativepath.Append(Path.DirectorySeparatorChar);
+			}
+
+			for (var i = level; i < paths.Length; ++i) {
+				relativepath.Append(paths[i]);
+
+				if (i < (paths.Length - 1)) {
+					relativepath.Append(Path.DirectorySeparatorChar);
+				}
+			}
+
+			return relativepath.ToString();
 		}
 
 	}
