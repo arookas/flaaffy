@@ -776,9 +776,13 @@ namespace arookas.cotton {
 		void ReadCommand(string command, BmsArgument[] arguments) {
 			switch (command) {
 				case "noteon": ReadNoteOnCommand(command, arguments); break;
-				case "notefon": ReadNoteOnCommand(command, arguments); break;
+				case "gateon": ReadNoteOnCommand(command, arguments); break;
 				case "notesweep": ReadNoteOnCommand(command, arguments); break;
-				case "notefsweep": ReadNoteOnCommand(command, arguments); break;
+				case "gatesweep": ReadNoteOnCommand(command, arguments); break;
+				case "noteonz": ReadNoteOnZCommand(command, arguments); break;
+				case "gateonz": ReadNoteOnZCommand(command, arguments); break;
+				case "notesweepz": ReadNoteOnZCommand(command, arguments); break;
+				case "gatesweepz": ReadNoteOnZCommand(command, arguments); break;
 				case "noteoff": ReadNoteOffCommand(command, arguments); break;
 				case "wait": ReadWaitCommand(command, arguments); break;
 				case "timedparam": ReadTimedParamCommand(command, arguments); break;
@@ -861,9 +865,9 @@ namespace arookas.cotton {
 			}
 
 			switch (command) {
-				case "notefon": flags |= 0x20; break;
+				case "gateon": flags |= 0x20; break;
 				case "notesweep": flags |= 0x40; break;
-				case "notefsweep": flags |= 0x60; break;
+				case "gatesweep": flags |= 0x60; break;
 			}
 
 			if (arguments[1].Type == BmsArgumentType.RegisterDereference) {
@@ -893,6 +897,58 @@ namespace arookas.cotton {
 			arguments[0].Write(this, mWriter);
 			mWriter.Write8(flags);
 			arguments[1].Write(this, mWriter);
+		}
+		void ReadNoteOnZCommand(string command, BmsArgument[] arguments) {
+			EnsureArgumentCount(arguments, 3, 4);
+			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
+			EnsureArgumentType(arguments, 1, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
+			EnsureArgumentType(arguments, 2, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
+			EnsureArgumentType(arguments, 3, BmsArgumentType.Int8, BmsArgumentType.Int16, BmsArgumentType.Int24, BmsArgumentType.RegisterDereference);
+
+			byte flags = 0;
+
+			if (arguments[0].Type == BmsArgumentType.RegisterDereference) {
+				flags |= 0x80;
+			}
+
+			switch (command) {
+				case "gateonz": flags |= 0x20; break;
+				case "notesweepz": flags |= 0x40; break;
+				case "gatesweepz": flags |= 0x60; break;
+			}
+
+			if (arguments[1].Type == BmsArgumentType.RegisterDereference) {
+				var dereference = (arguments[1] as BmsRegisterDereference);
+				dereference.Bitflag = true;
+			}
+
+			if (arguments[2].Type == BmsArgumentType.RegisterDereference) {
+				var dereference = (arguments[2] as BmsRegisterDereference);
+				dereference.Bitflag = true;
+			}
+
+			if (arguments.Length > 3) {
+				switch (arguments[3].Type) {
+					case BmsArgumentType.Int8: flags |= 0x08; break;
+					case BmsArgumentType.Int16: flags |= 0x10; break;
+					case BmsArgumentType.Int24: flags |= 0x18; break;
+					case BmsArgumentType.RegisterDereference: {
+						var dereference = (arguments[3] as BmsRegisterDereference);
+						dereference.Bitflag = true;
+						flags |= 0x08;
+						break;
+					}
+				}
+			}
+
+			arguments[0].Write(this, mWriter);
+			mWriter.Write8(flags);
+			arguments[1].Write(this, mWriter);
+			arguments[2].Write(this, mWriter);
+
+			if (arguments.Length > 3) {
+				arguments[3].Write(this, mWriter);
+			}
 		}
 		void ReadNoteOffCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1, 2);
