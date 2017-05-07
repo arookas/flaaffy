@@ -161,6 +161,11 @@ namespace arookas.jolt {
 
 				}
 
+				WriteSeparator();
+				mWriter.WriteLine("# music sequences must be a multiple of 32 bytes");
+				mWriter.WriteLine();
+				mWriter.WriteLine(".align 32");
+				mWriter.WriteLine();
 				mWriter.Flush();
 			}
 		}
