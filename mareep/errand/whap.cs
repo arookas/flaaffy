@@ -785,7 +785,7 @@ namespace arookas {
 							wave.WaveSize = ((int)writer.Position - wave.WaveStart);
 							writer.WritePadding(32, 0);
 
-							mareep.WriteMessage(" #{0:X4} '{1,-35}' (0x{2:X6} 0x{3:X6}) ({4} 0x{5:X4} 0x{6:X4})\n", wave.WaveId, Path.GetFileName(wave.FileName), wave.WaveStart, wave.WaveSize, (wave.Loop ? 'o' : 'x'), wave.HistoryLast, wave.HistoryPenult);
+							mareep.WriteMessage(" #{0:X4} '{1,-35}' (0x{2:X6} 0x{3:X6})\n", wave.WaveId, Path.GetFileName(wave.FileName), wave.WaveStart, wave.WaveSize);
 						}
 					}
 				}
