@@ -37,7 +37,7 @@ The formats of the input and output files are determined by the extension and mu
 |Extension|Description|
 |---------|-----------|
 |.raw|Raw, mono audio data. Must be one of the raw-audio formats listed above. _&lt;format&gt;_ is required and is one of the raw-audio formats listed above.|
-|.wav|Microsoft audio data container. Only mono or stereo LPCM of bitdepths 8 or 16 are supported. _&lt;format&gt;_ is ignored.|
+|.wav|Microsoft audio-data container. Only mono or stereo LPCM of bit depths 8 or 16 are supported. _&lt;format&gt;_ is ignored.|
 |.afc|Stereo ADPCM audio stream. Supports loop points. _&lt;format&gt;_ is optional and either _pcm_ or _adpcm_. By default, streams are encoded to ADPCM.|
 
 Only the following conversions are supported:
