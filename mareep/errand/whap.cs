@@ -3,7 +3,6 @@ using arookas.IO.Binary;
 using arookas.Xml;
 using System;
 using System.IO;
-using System.Linq;
 using System.Xml;
 
 namespace arookas.whap {
@@ -66,7 +65,7 @@ namespace arookas.whap {
 					if (mInputFormat == IOFormat.Xml && IsFormatBinary(mOutputFormat)) {
 						chain.AppendLink(new WaveArchivePacker(inputDirectory, outputDirectory, mMixerMode));
 					} else if (IsFormatBinary(mInputFormat) && mOutputFormat == IOFormat.Xml) {
-						chain.AppendLink(new WaveArchiveExtractor(inputDirectory, Path.Combine(outputDirectory, mWaveOutput)));
+						chain.AppendLink(new WaveArchiveExtractor(inputDirectory, outputDirectory, mWaveOutput));
 					}
 
 					mareep.WriteMessage("Linking serializer...\n");
@@ -802,10 +801,11 @@ namespace arookas {
 
 	class WaveArchiveExtractor : Transformer<WaveBank> {
 
-		string mArchiveDirectory, mWaveDirectory;
+		string mInputDirectory, mOutputDirectory, mWaveDirectory;
 
-		public WaveArchiveExtractor(string archiveDirectory, string waveDirectory) {
-			mArchiveDirectory = archiveDirectory;
+		public WaveArchiveExtractor(string inputDirectory, string outputDirectory, string waveDirectory) {
+			mInputDirectory = inputDirectory;
+			mOutputDirectory = outputDirectory;
 			mWaveDirectory = waveDirectory;
 		}
 
@@ -814,15 +814,17 @@ namespace arookas {
 				return null;
 			}
 
-			if (!Directory.Exists(mWaveDirectory)) {
-				mareep.WriteMessage("Creating directory '{0}'...\n", mWaveDirectory);
-				Directory.CreateDirectory(mWaveDirectory);
+			var waveDirectory = Path.Combine(mOutputDirectory, mWaveDirectory);
+
+			if (!Directory.Exists(waveDirectory)) {
+				mareep.WriteMessage("Creating directory '{0}'...\n", waveDirectory);
+				Directory.CreateDirectory(waveDirectory);
 			}
 
 			mareep.WriteMessage("Transferring waves...\n");
 
 			foreach (var waveGroup in obj) {
-				var archiveFileName = Path.Combine(mArchiveDirectory, waveGroup.ArchiveFileName);
+				var archiveFileName = Path.Combine(mInputDirectory, waveGroup.ArchiveFileName);
 
 				using (var instream = mareep.OpenFile(archiveFileName)) {
 					var reader = new aBinaryReader(instream, Endianness.Big);
@@ -832,9 +834,9 @@ namespace arookas {
 
 					foreach (var wave in waveGroup) {
 						var waveFileName = String.Format("{0}_{1:D5}.{2}.raw", waveGroup.ArchiveFileName, wave.WaveId, wave.Format.ToLowerString());
-						wave.FileName = Path.Combine(mWaveDirectory, waveFileName);
+						wave.FileName =  Path.Combine(mWaveDirectory, waveFileName);
 
-						using (var outstream = mareep.CreateFile(wave.FileName)) {
+						using (var outstream = mareep.CreateFile(Path.Combine(mOutputDirectory, wave.FileName))) {
 							var writer = new aBinaryWriter(outstream, Endianness.Big);
 							reader.Goto(wave.WaveStart);
 							writer.Write8s(reader.Read8s(wave.WaveSize));
