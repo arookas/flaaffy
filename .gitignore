@@ -4,8 +4,16 @@
 *.user
 *.sln
 *.suo
+*.sdf
+*.db
+*.opendb
+*.vcxproj*
 obj/
 bin/
+
+# directories
+Debug/
+Release/
 
 # executables
 *.bat
