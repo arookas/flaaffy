@@ -955,7 +955,7 @@ namespace arookas.cotton {
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
 
 			if (arguments.Length > 1) {
-				EnsureArgumentType(arguments, 1, BmsArgumentType.Int8, BmsArgumentType.Int16);
+				EnsureArgumentType(arguments, 1, BmsArgumentType.Int8);
 			}
 
 			if (arguments[0].Type == BmsArgumentType.RegisterDereference) {
@@ -963,7 +963,7 @@ namespace arookas.cotton {
 
 				var dereference = (arguments[0] as BmsRegisterDereference);
 
-				if (dereference.RegisterIndex < 0 || dereference.RegisterIndex > 7) {
+				if (dereference.RegisterIndex > 7) {
 					Error("register index must be 0-7.");
 				}
 
@@ -993,13 +993,7 @@ namespace arookas.cotton {
 			}
 
 			if (arguments.Length > 1) {
-				var immediate = (arguments[1] as BmsImmediate);
-
-				if (immediate > 100) {
-					immediate.SetValue(BmsArgumentType.Int8, (103 + immediate / 20));
-				}
-
-				immediate.Write(this, mWriter, BmsArgumentType.Int8);
+				arguments[1].Write(this, mWriter);
 			}
 		}
 		void ReadWaitCommand(string command, BmsArgument[] arguments) {
@@ -1152,7 +1146,7 @@ namespace arookas.cotton {
 				case "band": opcode = 0x30; break;
 				case "bor": opcode = 0x40; break;
 				case "bxor": opcode = 0x50; break;
-				case "negate": EnsureArgumentCount(arguments, 1); opcode = 0x60; break;
+				case "negate": opcode = 0x60; break;
 				case "random": opcode = 0x90; break;
 			}
 
@@ -1178,13 +1172,21 @@ namespace arookas.cotton {
 			EnsureArgumentType(arguments, 1, BmsArgumentType.Int24, BmsArgumentType.LabelReference, BmsArgumentType.RegisterDereference);
 
 			byte opcode, flags;
+			var overrides = GenerateCommandOverrides(out opcode, out flags, arguments);
 
-			if (GenerateCommandOverrides(out opcode, out flags, arguments)) {
+			if (overrides) {
 				mWriter.Write8(opcode);
-				mWriter.Write8(0xC1);
+			}
+
+			switch (command) {
+				case "opentrack": opcode = 0xC1; break;
+				case "opentrackbros": opcode = 0xC2; break;
+			}
+			
+			mWriter.Write8(opcode);
+
+			if (overrides) {
 				mWriter.Write8(flags);
-			} else {
-				mWriter.Write8(0xC1);
 			}
 
 			foreach (var argument in arguments) {
