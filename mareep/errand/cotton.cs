@@ -788,6 +788,11 @@ namespace arookas.cotton {
 				case "add": ReadAddCommand(command, arguments); break;
 				case "multiply": ReadMultiplyCommand(command, arguments); break;
 				case "compare": ReadCompareCommand(command, arguments); break;
+				case "loadtbl": ReadLoadTblCommand(command, arguments); break;
+				case "loadtblb": ReadLoadTblCommand(command, arguments); break;
+				case "loadtbls": ReadLoadTblCommand(command, arguments); break;
+				case "loadtblh": ReadLoadTblCommand(command, arguments); break;
+				case "loadtblw": ReadLoadTblCommand(command, arguments); break;
 				case "subtract": ReadSubtractCommand(command, arguments); break;
 				case "bshift": ReadBitwiseCommand(command, arguments); break;
 				case "bshiftu": ReadBitwiseCommand(command, arguments); break;
@@ -1117,8 +1122,33 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
-		void ReadTableCommand(string command, BmsArgument[] arguments) {
-			EnsureArgumentCount(arguments, 2);
+		void ReadLoadTblCommand(string command, BmsArgument[] arguments) {
+			EnsureArgumentCount(arguments, 3);
+			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8);
+			EnsureArgumentType(arguments, 1, BmsArgumentType.Int8, BmsArgumentType.Half16, BmsArgumentType.Int16, BmsArgumentType.RegisterDereference);
+			EnsureArgumentType(arguments, 2, BmsArgumentType.RegisterDereference);
+
+			byte flags = 0;
+
+			switch (command) {
+				case "loadtblh": flags |= 0x10; break;
+				case "loadtblq": flags |= 0x20; break;
+				case "loadtblw": flags |= 0x30; break;
+				case "loadtbl": flags |= 0x40; break;
+			}
+
+			switch (arguments[1].Type) {
+				case BmsArgumentType.Int8: flags |= 0x4; break;
+				case BmsArgumentType.Half16: flags |= 0x8; break;
+				case BmsArgumentType.Int16: flags |= 0xC; break;
+			}
+
+			mWriter.Write8(0xAA);
+			mWriter.Write8(flags);
+
+			foreach (var argument in arguments) {
+				argument.Write(this, mWriter);
+			}
 		}
 		void ReadSubtractCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
