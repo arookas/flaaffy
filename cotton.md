@@ -200,12 +200,9 @@ gatesweep kk, vv, cc
 
 ||Description|
 |:-:|:-|
-|_kk_|Key number of the note.|
-|_vv_|Velocity of the note (0&#8209;127).|
-|_cc_|Index of channel on which to play the note. Must evaluate to a number between 1 and 7 (inclusive).|
-Each may be either an immediate or register dereference.
-
-> **Note:** If _cc_ is a register dereference, the register index must still be only r1 through r7.
+|_kk_|Key number of the note. May be either a register dereference or int8.|
+|_vv_|Velocity of the note (0&#8209;127). May be either a register dereference or int8.|
+|_cc_|Index of channel on which to play the note. Must evaluate to a number between 1 and 7 (inclusive). May be either a register dereference or int8. If _cc_ is a register dereference, the register index must still be only r1 through r7.|
 
 ```r
 noteonz kk, vv, t1[, t2]
@@ -220,11 +217,10 @@ For note-ons, the track will automatically suspend for the note's duration, afte
 
 ||Description|
 |:-:|:-|
-|_kk_|Key number of the note.|
-|_vv_|Velocity of the note (0&#8209;127).|
-|_t1_|Time base for the notes duration, based on 100.|
-|_t2_|The note's duration in ticks. The track will be delayed by this number of ticks.|
-Each may be either an immediate or register dereference.
+|_kk_|Key number of the note. May be either a register dereference or int8.|
+|_vv_|Velocity of the note (0&#8209;127). May be either a register dereference or int8.|
+|_t1_|Time base for the notes duration, based on 100. May be either a register dereference or int8.|
+|_t2_|The note's duration in ticks. The track will be delayed by this number of ticks. May be either a register dereference or int8.|
 
 The -on variations simply use the specified key number directly.
 Sweeps, on the other hand, "glide" (a la portamento) from the key number of the previous note to the current note over the course of the note's duration.
