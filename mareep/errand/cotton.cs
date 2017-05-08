@@ -626,8 +626,6 @@ namespace arookas.cotton {
 
 	partial class BmsAssembler {
 
-		static readonly int[] srKeyBases = new int[7] { 0, 2, 4, 5, 7, 9, 11, };
-
 		BmsArgument[] ReadArguments(string line, ref int cursor) {
 			var arguments = new List<BmsArgument>(8);
 
