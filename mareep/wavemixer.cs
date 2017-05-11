@@ -98,7 +98,7 @@ namespace arookas {
 			if (!format.IsDefined()) {
 				throw new ArgumentOutOfRangeException("format");
 			}
-
+			
 			mFormat = format;
 			mSampleCount = mareep.CalculateSampleCount(format, (int)stream.Length);
 			mReader = new aBinaryReader(stream, Endianness.Big);
@@ -107,7 +107,7 @@ namespace arookas {
 		public RawWaveMixer(Stream stream, Wave wave, WaveFormat format) : this(stream, format) {
 			CopyWaveInfo(wave);
 		}
-
+		
 		public override void CopyWaveInfo(Wave wave) {
 			if (wave == null) {
 				return;
