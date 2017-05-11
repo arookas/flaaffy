@@ -407,7 +407,7 @@ namespace arookas {
 				mReader.Goto(releaseTableOffset);
 				InstrumentOscillatorTableMode mode;
 
-				for (; ; ) {
+				do {
 					mode = (InstrumentOscillatorTableMode)mReader.ReadS16();
 
 					if (!mode.IsDefined()) {
