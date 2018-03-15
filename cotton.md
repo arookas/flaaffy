@@ -166,7 +166,7 @@ It may be preceeded by a number of arguments, separated by commas.
 |.undefinelabel _name_|Undefines the label named _name_. If none exists, the directive will do nothing.|
 |.align _multiple_|Writes padding zeroes until the binary file size is a multiple of _multiple_ bytes. If the size is already of the specified multiple, nothing is written. _multiple_ may be any immediate value or variable.|
 
-There are also [POD](https://en.wikipedia.org/wiki/Passive_data_structure) directives, allowing you to embed unadultered immediates into the binary file.
+There are also [POD](https://en.wikipedia.org/wiki/Passive_data_structure) directives, allowing you to embed unadulterated immediates into the binary file.
 Each of these directives may be followed by an immediate or a variable.
 The 24-bit directive also supports labels.
 
@@ -191,6 +191,8 @@ A note-on releases any previous note-on or gate-on still playing on the channel.
 A gate-on releases any previous note-on (but not gate-on) still playing on the channel.
 Gates may be used if you want to change the velocity or key number of a note overtime without releasing the note.
 
+---
+
 ```r
 noteon kk, vv, cc
 gateon kk, vv, cc
@@ -203,6 +205,8 @@ gatesweep kk, vv, cc
 |_kk_|Key number of the note. May be either a register dereference or int8.|
 |_vv_|Velocity of the note (0&#8209;127). May be either a register dereference or int8.|
 |_cc_|Index of channel on which to play the note. Must evaluate to a number between 1 and 7 (inclusive). May be either a register dereference or int8. If _cc_ is a register dereference, the register index must still be only r1 through r7.|
+
+---
 
 ```r
 noteonz kk, vv, t1[, t2]
@@ -226,6 +230,8 @@ The -on variations simply use the specified key number directly.
 Sweeps, on the other hand, "glide" (a la portamento) from the key number of the previous note to the current note over the course of the note's duration.
 If used on a non-zero channel, the note will simply use the previous note number directly and no portamento will occur.
 
+---
+
 Note-offs release a note on a channel, optionally overriding the oscillator's default release:
 
 ```r
@@ -237,6 +243,8 @@ noteoff cc[, rr]
 |_cc_|Channel index. Must evaluate to a number between 1 and 7 (inclusive). May also be a register dereference; if so, the register index must be between r0 and r7 (inclusive).|
 |_rr_|Optional release value, specified as an int8. Values larger than 100 are passed through the formula _(rr&nbsp;-&nbsp;98)&nbsp;×&nbsp;20_. Units is in oscillator ticks.|
 
+---
+
 The previous key number may be overridden using the `setlastnote` command:
 
 ```r
@@ -247,7 +255,9 @@ setlastnote kk
 |:-:|:-|
 |_kk_|Key number to which to set the last note. May also be a register dereference.|
 
-Each track also stores a transpose value by which to offset all key numbers for notes and gates.
+---
+
+Each track also stores a transpose value by which to offset all key numbers for notes and gates:
 
 ```r
 transpose vv
@@ -271,6 +281,8 @@ wait tt
 ||Description|
 |:-:|:-|
 |_tt_|The number of ticks to wait before processing commands on this track again. If zero, the track will not be suspended and will return to processing commands immediately. _tt_ may be a register dereference, int8, int16, or int24.|
+
+---
 
 Each track has its own tempo and time base.
 The time base controls how many sequence ticks occur per beat.
@@ -571,7 +583,9 @@ If the root track of a sequence is closed, the sequence ends.
 #### Syncing
 
 The audio system in JSYSTEM allows for multiple ways for the game and tracks to communicate.
-One of the basic ways is a simple synchronous callback system:
+You may utilize a simple synchronous callback system or an asynchronous port system.
+
+---
 
 ```r
 synccpu vv
@@ -586,31 +600,24 @@ The result of the callback is stored in rcmp.
 
 ---
 
-You may also communicate between the game and the tracks via ports:
-
 ```r
 readport ii, rr
+writeport ii, ww
 ```
+
+Gets or sets the value of port _ii_ on the current track.
 
 ||Description|
 |:-:|:-|
-|_ii_|The port number to read. May be either a register dereference or int8.|
+|_ii_|The port number to read or write. May be either a register dereference or int8.|
 |_rr_|The register index in which to store the read value. May be either an int8 or register dereference.|
-
----
-
-```r
-writeport ii, rr
-```
-
-||Description|
-|:-:|:-|
-|_ii_|The port number to which to write. May be either a register dereference or int8.|
-|_rs_|The value to write to the register. Must be a register dereference.|
+|_ww_|The value to write to the port. Must be a register dereference.|
 
 #### Debugging
 
 There are several BMS commands used for debugging.
+
+---
 
 ```r
 checkwave ww
