@@ -8,12 +8,16 @@
 *.db
 *.opendb
 *.vcxproj*
+packages.config
 obj/
 bin/
+.vs/
+.vscode/
 
 # directories
 Debug/
 Release/
+packages/
 
 # executables
 *.bat
