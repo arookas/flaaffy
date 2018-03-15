@@ -18,6 +18,7 @@ namespace arookas {
 		Wave,
 		Cotton,
 		Jolt,
+		Charge,
 
 	}
 
