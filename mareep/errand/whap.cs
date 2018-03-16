@@ -12,7 +12,8 @@ namespace arookas.whap {
 
 		WaveMixerMode mMixerMode;
 		bool mExtractWav;
-		string mWaveOutput;
+		string mWavePath;
+		string mBankPath;
 
 		public override void LoadParams(string[] arguments) {
 			base.LoadParams(arguments);
@@ -23,11 +24,21 @@ namespace arookas.whap {
 			parameter = mareep.GetLastCmdParam(cmdline, "-wave-dir");
 
 			if (parameter == null) {
-				mWaveOutput = "waves/";
+				mWavePath = "waves/";
 			} else if (parameter.Count == 0) {
 				mareep.WriteError("WHAP: missing argument for -wave-dir parameter.");
 			} else {
-				mWaveOutput = parameter[0];
+				mWavePath = parameter[0];
+			}
+
+			parameter = mareep.GetLastCmdParam(cmdline, "-bank-dir");
+
+			if (parameter == null) {
+				mBankPath = "banks/";
+			} else if (parameter.Count == 0) {
+				mareep.WriteError("WHAP: missing argument for -bank-dir parameter.");
+			} else {
+				mBankPath = parameter[0];
 			}
 
 			parameter = mareep.GetLastCmdParam(cmdline, "-mix-mode");
@@ -61,14 +72,15 @@ namespace arookas.whap {
 					}
 
 					mareep.WriteMessage("Linking wave transferer...\n");
-
 					var inputDirectory = Path.GetDirectoryName(Path.GetFullPath(mInputFile));
 					var outputDirectory = Path.GetDirectoryName(Path.GetFullPath(mOutputFile));
+					var bankDirectory = Path.Combine(inputDirectory, mBankPath);
+					var waveDirectory = Path.Combine(outputDirectory, mWavePath);
 
 					if (mInputFormat == IOFormat.Xml && IsFormatBinary(mOutputFormat)) {
-						chain.AppendLink(new WaveArchivePacker(inputDirectory, outputDirectory, mMixerMode));
+						chain.AppendLink(new WaveArchivePacker(bankDirectory, waveDirectory, mMixerMode));
 					} else if (IsFormatBinary(mInputFormat) && mOutputFormat == IOFormat.Xml) {
-						chain.AppendLink(new WaveArchiveExtractor(inputDirectory, outputDirectory, mWaveOutput, mExtractWav));
+						chain.AppendLink(new WaveArchiveExtractor(bankDirectory, waveDirectory, mExtractWav));
 					}
 
 					mareep.WriteMessage("Linking serializer...\n");
@@ -80,7 +92,6 @@ namespace arookas.whap {
 					}
 
 					mareep.WriteMessage("Calling transform chain...\n");
-
 					chain.Transform(null);
 				}
 			}
@@ -725,11 +736,11 @@ namespace arookas {
 
 	class WaveArchivePacker : Transformer<WaveBank> {
 
-		string mArchiveDirectory, mWaveDirectory;
+		string mBankDirectory, mWaveDirectory;
 		WaveMixerMode mMixerMode;
 
-		public WaveArchivePacker(string archiveDirectory, string waveDirectory, WaveMixerMode mixermode) {
-			mArchiveDirectory = archiveDirectory;
+		public WaveArchivePacker(string bankDirectory, string waveDirectory, WaveMixerMode mixermode) {
+			mBankDirectory = bankDirectory;
 			mWaveDirectory = waveDirectory;
 			mMixerMode = mixermode;
 		}
@@ -738,18 +749,18 @@ namespace arookas {
 			if (obj == null) {
 				return null;
 			}
-			
+
 			var badwaves = 0;
 
-			if (!Directory.Exists(mArchiveDirectory)) {
-				mareep.WriteMessage("Creating directory '{0}'...\n", mArchiveDirectory);
-				Directory.CreateDirectory(mArchiveDirectory);
+			if (!Directory.Exists(mBankDirectory)) {
+				mareep.WriteMessage("Creating directory '{0}'...\n", mBankDirectory);
+				Directory.CreateDirectory(mBankDirectory);
 			}
 
 			mareep.WriteMessage("Transferring waves...\n");
 
 			foreach (var waveGroup in obj) {
-				var archiveFileName = Path.Combine(mArchiveDirectory, waveGroup.ArchiveFileName);
+				var archiveFileName = Path.Combine(mBankDirectory, waveGroup.ArchiveFileName);
 
 				mareep.WriteSeparator('-');
 				mareep.WriteMessage("{0}\n", waveGroup.ArchiveFileName);
@@ -815,12 +826,11 @@ namespace arookas {
 
 	class WaveArchiveExtractor : Transformer<WaveBank> {
 
-		string mInputDirectory, mOutputDirectory, mWaveDirectory;
+		string mBankDirectory, mWaveDirectory;
 		bool mExtractWav;
 
-		public WaveArchiveExtractor(string inputDirectory, string outputDirectory, string waveDirectory, bool extractwav) {
-			mInputDirectory = inputDirectory;
-			mOutputDirectory = outputDirectory;
+		public WaveArchiveExtractor(string bankDirectory, string waveDirectory, bool extractwav) {
+			mBankDirectory = bankDirectory;
 			mWaveDirectory = waveDirectory;
 			mExtractWav = extractwav;
 		}
@@ -830,36 +840,36 @@ namespace arookas {
 				return null;
 			}
 
-			var waveDirectory = Path.Combine(mOutputDirectory, mWaveDirectory);
-
-			if (!Directory.Exists(waveDirectory)) {
-				mareep.WriteMessage("Creating directory '{0}'...\n", waveDirectory);
-				Directory.CreateDirectory(waveDirectory);
+			if (!Directory.Exists(mWaveDirectory)) {
+				mareep.WriteMessage("Creating directory '{0}'...\n", mWaveDirectory);
+				Directory.CreateDirectory(mWaveDirectory);
 			}
 
 			mareep.WriteMessage("Transferring waves...\n");
-
 			var extension = (mExtractWav ? "wav" : "raw");
 
 			foreach (var waveGroup in obj) {
-				var archiveFileName = Path.Combine(mInputDirectory, waveGroup.ArchiveFileName);
+				var archiveFileName = Path.Combine(mBankDirectory, waveGroup.ArchiveFileName);
 				var archiveNoExtension = Path.GetFileNameWithoutExtension(waveGroup.ArchiveFileName);
 
-				using (var instream = mareep.OpenFile(archiveFileName)) {
-					var reader = new aBinaryReader(instream, Endianness.Big);
+				using (var input = mareep.OpenFile(archiveFileName)) {
+					var reader = new aBinaryReader(input, Endianness.Big);
 
 					mareep.WriteSeparator('-');
 					mareep.WriteMessage("{0} ({1} wave(s))\n", waveGroup.ArchiveFileName, waveGroup.Count);
 
 					foreach (var wave in waveGroup) {
-						var waveFileName = String.Format("{0}_{1:D5}.{2}.{3}", archiveNoExtension, wave.WaveId, wave.Format.ToLowerString(), extension);
-						wave.FileName =  Path.Combine(mWaveDirectory, waveFileName);
+						wave.FileName = String.Format("{0}_{1:D5}.{2}.{3}", archiveNoExtension, wave.WaveId, wave.Format.ToLowerString(), extension);
+						string waveFileName = Path.Combine(mWaveDirectory, wave.FileName);
 
-						using (var outstream = mareep.CreateFile(Path.Combine(mOutputDirectory, wave.FileName))) {
+						using (var output = mareep.CreateFile(waveFileName)) {
+							reader.Goto(wave.WaveStart);
+							var data = reader.Read8s(wave.WaveSize);
+
 							if (mExtractWav) {
-								ExtractWav(wave, reader, outstream);
+								ExtractWav(wave, data, output);
 							} else {
-								ExtractRaw(wave, reader, outstream);
+								ExtractRaw(wave, data, output);
 							}
 						}
 
@@ -871,10 +881,8 @@ namespace arookas {
 			return obj;
 		}
 
-		void ExtractWav(Wave wave, aBinaryReader reader, Stream outstream) {
-			reader.Goto(wave.WaveStart);
-			var data = reader.Read8s(wave.WaveSize);
-			var writer = new aBinaryWriter(outstream, Endianness.Little);
+		void ExtractWav(Wave wave, byte[] data, Stream stream) {
+			var writer = new aBinaryWriter(stream, Endianness.Little);
 			var mixer = new RawWaveMixer(new MemoryStream(data), wave.Format);
 			var dataSize = (wave.SampleCount * 2);
 			var sampleRate = (int)wave.SampleRate;
@@ -895,12 +903,8 @@ namespace arookas {
 			mixer.Write(WaveFormat.Pcm16, writer);
 		}
 
-		void ExtractRaw(Wave wave, aBinaryReader reader, Stream outstream) {
-			reader.Goto(wave.WaveStart);
-			var data = reader.Read8s(wave.WaveSize);
-			var writer = new aBinaryWriter(outstream, Endianness.Big);
-
-			writer.Write8s(data);
+		void ExtractRaw(Wave wave, byte[] data, Stream stream) {
+			stream.Write(data, 0, data.Length);
 		}
 
 	}
