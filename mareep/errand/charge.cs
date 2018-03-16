@@ -195,7 +195,7 @@ namespace arookas.charge {
 					mareep.WriteError("CHARGE: could not find sequence {0}", mTarget);
 				}
 
-				int new_size = ((seq_data.Length + 31) & ~31);
+				int new_offset, new_size = ((seq_data.Length + 31) & ~31);
 				int difference = (new_size - old_size);
 				reader.Goto(offset + 16);
 
@@ -216,12 +216,13 @@ namespace arookas.charge {
 						barc_writer.WriteS32(reader.ReadS32());
 						offset = reader.ReadS32();
 						size = reader.ReadS32();
+						new_offset = offset;
 
 						if (offset > old_offset) {
-							offset += difference;
+							new_offset += difference;
 						}
 
-						arc_writer.Goto(offset);
+						arc_writer.Goto(new_offset);
 
 						if (i == index) {
 							arc_writer.Write8s(seq_data);
@@ -231,7 +232,7 @@ namespace arookas.charge {
 							arc_writer.Write8s(arc_data, offset, size);
 						}
 
-						barc_writer.WriteS32(offset);
+						barc_writer.WriteS32(new_offset);
 						barc_writer.WriteS32(size);
 					}
 				}
