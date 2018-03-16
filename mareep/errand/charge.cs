@@ -118,10 +118,11 @@ namespace arookas.charge {
 			int offset, size;
 
 			using (Stream stream = mareep.OpenFile(mAafInPath)) {
+				mareep.WriteMessage("Scanning AAF header...\n");
 				aBinaryReader reader = new aBinaryReader(stream, Endianness.Big);
 
 				if (!ReadAafHeader(reader, 4, 0, out offset, out size)) {
-					mareep.WriteError("CHARGE: failed to find sequence info block");
+					mareep.WriteError("CHARGE: failed to find sequence info data");
 				}
 
 				reader.Goto(offset);
@@ -135,10 +136,17 @@ namespace arookas.charge {
 				reader.Goto(offset + 32);
 				int index;
 
+				mareep.WriteMessage("Found sequence info data (0x{0:X6}, 0x{1:X6}), {2} sequence(s)\n", offset, size, count);
+				mareep.WriteMessage("Scanning sequence list...\n");
+
 				if (!ReadBarcHeader(reader, mTarget, count, out index, out offset, out size)) {
 					mareep.WriteError("CHARGE: could not find sequence {0}", mTarget);
 				}
+
+				mareep.WriteMessage("Found sequence {0} (0x{1:X6}, 0x{2:X6})\n", index, offset, size);
 			}
+
+			mareep.WriteMessage("Extracting sequence data...\n");
 
 			using (Stream stream = mareep.OpenFile(mArcInPath)) {
 				aBinaryReader reader = new aBinaryReader(stream);
@@ -171,6 +179,7 @@ namespace arookas.charge {
 			byte[] barc_data = null;
 
 			using (Stream input = mareep.OpenFile(mAafInPath)) {
+				mareep.WriteMessage("Scanning AAF header...\n");
 				aBinaryReader reader = new aBinaryReader(input, Endianness.Big);
 				int offset, size;
 
@@ -187,13 +196,17 @@ namespace arookas.charge {
 				reader.Goto(offset + 12);
 				int count = reader.ReadS32();
 				barc_data = new byte[32 + 32 * count];
-
 				reader.Goto(offset + 32);
 				int index, old_offset, old_size;
+
+				mareep.WriteMessage("Found sequence info data (0x{0:X6}, 0x{1:X6}), {2} sequence(s)\n", offset, size, count);
+				mareep.WriteMessage("Scanning sequence list...\n");
 
 				if (!ReadBarcHeader(reader, mTarget, count, out index, out old_offset, out old_size)) {
 					mareep.WriteError("CHARGE: could not find sequence {0}", mTarget);
 				}
+
+				mareep.WriteMessage("Found sequence {0} (0x{1:X6}, 0x{2:X6})\n", index, offset, size);
 
 				int new_offset, new_size = ((seq_data.Length + 31) & ~31);
 				int difference = (new_size - old_size);
@@ -201,6 +214,7 @@ namespace arookas.charge {
 
 				using (Stream arc_stream = mareep.CreateFile(mArcOutPath))
 				using (MemoryStream barc_stream = new MemoryStream(barc_data, true)) {
+					mareep.WriteMessage("Writing new sequence data...\n");
 					aBinaryWriter arc_writer = new aBinaryWriter(arc_stream);
 					aBinaryWriter barc_writer = new aBinaryWriter(barc_stream, Endianness.Big);
 					barc_writer.WriteS32(0x42415243); // 'BARC'
@@ -240,6 +254,7 @@ namespace arookas.charge {
 				reader.Goto(0);
 
 				using (Stream output = mareep.CreateFile(mAafOutPath)) {
+					mareep.WriteMessage("Writing new AAF file...\n");
 					aBinaryWriter writer = new aBinaryWriter(output, Endianness.Big);
 
 					if (!WriteAafHeader(reader, writer, 4, 0, barc_data)) {
@@ -269,6 +284,7 @@ namespace arookas.charge {
 			}
 
 			using (Stream stream = mareep.OpenFile(mAafInPath)) {
+				mareep.WriteMessage("Scanning AAF header...\n");
 				aBinaryReader reader = new aBinaryReader(stream, Endianness.Big);
 				int offset, size;
 
@@ -282,6 +298,8 @@ namespace arookas.charge {
 					mareep.WriteError("CHARGE: could not find 'IBNK' header");
 				}
 
+				mareep.WriteMessage("Found bank data {0} (0x{1:X6}, 0x{2:X6})\n", index, offset, size);
+				mareep.WriteMessage("Extracting bank data...\n");
 				reader.Goto(offset);
 				WriteFileData(mOutput, reader.Read8s(size));
 			}
@@ -296,6 +314,7 @@ namespace arookas.charge {
 				mareep.WriteError("CHARGE: missing -input parameter");
 			}
 
+			mareep.WriteMessage("Loading input file data...\n");
 			byte[] data = ReadFileData(mInput);
 
 			if (mTarget == null) {
@@ -305,11 +324,12 @@ namespace arookas.charge {
 			int index;
 
 			if (!Int32.TryParse(mTarget, out index)) {
-				mareep.WriteError("CHARGE: bad ibnk index {0}", mTarget);
+				mareep.WriteError("CHARGE: bad target {0}", mTarget);
 			}
 
 			using (Stream input = mareep.OpenFile(mAafInPath))
 			using (Stream output = mareep.CreateFile(mAafOutPath)) {
+				mareep.WriteMessage("Writing new AAF file...\n");
 				aBinaryReader reader = new aBinaryReader(input, Endianness.Big);
 				aBinaryWriter writer = new aBinaryWriter(output, Endianness.Big);
 
@@ -339,11 +359,12 @@ namespace arookas.charge {
 			}
 
 			using (Stream stream = mareep.OpenFile(mAafInPath)) {
+				mareep.WriteMessage("Scanning AAF header...\n");
 				aBinaryReader reader = new aBinaryReader(stream, Endianness.Big);
 				int offset, size;
 
 				if (!ReadAafHeader(reader, 3, index, out offset, out size)) {
-					mareep.WriteError("CHARGE: failed to find wave bank block\n");
+					mareep.WriteError("CHARGE: failed to find wave bank data\n");
 				}
 
 				reader.Goto(offset);
@@ -351,7 +372,9 @@ namespace arookas.charge {
 				if (reader.ReadS32() != 0x57535953) { // 'WSYS'
 					mareep.WriteError("CHARGE: could not find 'WSYS' header");
 				}
-
+				
+				mareep.WriteMessage("Found wave bank data {0} (0x{1:X6}, 0x{2:X6})\n", index, offset, size);
+				mareep.WriteMessage("Extracting wave bank data...\n");
 				reader.Goto(offset);
 				WriteFileData(mOutput, reader.Read8s(size));
 			}
@@ -366,6 +389,7 @@ namespace arookas.charge {
 				mareep.WriteError("CHARGE: missing -input parameter");
 			}
 
+			mareep.WriteMessage("Loading input file data...\n");
 			byte[] data = ReadFileData(mInput);
 
 			if (mTarget == null) {
@@ -375,11 +399,12 @@ namespace arookas.charge {
 			int index;
 
 			if (!Int32.TryParse(mTarget, out index)) {
-				mareep.WriteError("CHARGE: bad wsys index {0}", mTarget);
+				mareep.WriteError("CHARGE: bad target {0}", mTarget);
 			}
 
 			using (Stream input = mareep.OpenFile(mAafInPath))
 			using (Stream output = mareep.CreateFile(mAafOutPath)) {
+				mareep.WriteMessage("Writing new AAF file...\n");
 				aBinaryReader reader = new aBinaryReader(input, Endianness.Big);
 				aBinaryWriter writer = new aBinaryWriter(output, Endianness.Big);
 
