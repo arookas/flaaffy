@@ -21,8 +21,8 @@ The available formats are as follows:
 
 |Format|Description|
 |------|-----------|
-|_bigbinary_|Big-endian binary "WSYS" format.|
-|_littlebinary_|Little-endian binary "WSYS" format.|
+|_be_|Big-endian binary "WSYS" format.|
+|_le_|Little-endian binary "WSYS" format.|
 |_xml_|Basic XML text format.|
 
 The available stereo-mixing modes are as follows:

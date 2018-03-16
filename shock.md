@@ -16,8 +16,8 @@ The available formats are as follows:
 
 |Format|Description|
 |------|-----------|
-|_bigbinary_|Big-endian binary "IBNK" format.|
-|_littlebinary_|Little-endian binary "IBNK" format.|
+|_be_|Big-endian binary "IBNK" format.|
+|_le_|Little-endian binary "IBNK" format.|
 |_xml_|Basic XML text format.|
 
 ## XML format

@@ -49,6 +49,7 @@ namespace arookas {
 		public static void GatherErrandsInAssembly() {
 			GatherErrandsInAssembly(Assembly.GetExecutingAssembly());
 		}
+
 		public static void GatherErrandsInAssembly(Assembly assembly) {
 			if (sErrands == null) {
 				sErrands = new Dictionary<Errand, Type>(32);
@@ -130,15 +131,17 @@ namespace arookas {
 				mareep.WriteError("SYSTEM: unknown output format '{0}'.", parameter[1]);
 			}
 		}
+
 		public abstract void Perform();
 
 		protected static bool IsFormatBinary(IOFormat format) {
-			return (format == IOFormat.LittleBinary || format == IOFormat.BigBinary);
+			return (format == IOFormat.LE || format == IOFormat.BE);
 		}
+
 		protected static Endianness GetFormatEndianness(IOFormat format) {
 			switch (format) {
-				case IOFormat.LittleBinary: return Endianness.Little;
-				case IOFormat.BigBinary: return Endianness.Big;
+				case IOFormat.LE: return Endianness.Little;
+				case IOFormat.BE: return Endianness.Big;
 				default: throw new ArgumentOutOfRangeException("format");
 			}
 		}
@@ -146,9 +149,11 @@ namespace arookas {
 		protected static xDocument CreateXmlInput(Stream stream) {
 			return new xDocument(stream);
 		}
+
 		protected static aBinaryReader CreateLittleBinaryInput(Stream stream) {
 			return new aBinaryReader(stream, Endianness.Little, Encoding.GetEncoding(932));
 		}
+
 		protected static aBinaryReader CreateBigBinaryInput(Stream stream) {
 			return new aBinaryReader(stream, Endianness.Big, Encoding.GetEncoding(932));
 		}
@@ -164,9 +169,11 @@ namespace arookas {
 
 			return XmlWriter.Create(stream, settings);
 		}
+
 		protected static aBinaryWriter CreateLittleBinaryOutput(Stream stream) {
 			return new aBinaryWriter(stream, Endianness.Little, Encoding.GetEncoding(932));
 		}
+
 		protected static aBinaryWriter CreateBigBinaryOutput(Stream stream) {
 			return new aBinaryWriter(stream, Endianness.Big, Encoding.GetEncoding(932));
 		}
@@ -174,8 +181,8 @@ namespace arookas {
 		protected enum IOFormat {
 
 			Xml,
-			LittleBinary,
-			BigBinary,
+			LE,
+			BE,
 
 		}
 

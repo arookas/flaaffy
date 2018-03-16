@@ -67,8 +67,8 @@ namespace arookas.whap {
 
 					switch (mInputFormat) {
 						case IOFormat.Xml: chain.AppendLink(new XmlWaveBankDeserializer(CreateXmlInput(instream).Root)); break;
-						case IOFormat.LittleBinary: chain.AppendLink(new BinaryWaveBankDeserializer(CreateLittleBinaryInput(instream))); break;
-						case IOFormat.BigBinary: chain.AppendLink(new BinaryWaveBankDeserializer(CreateBigBinaryInput(instream))); break;
+						case IOFormat.LE: chain.AppendLink(new BinaryWaveBankDeserializer(CreateLittleBinaryInput(instream))); break;
+						case IOFormat.BE: chain.AppendLink(new BinaryWaveBankDeserializer(CreateBigBinaryInput(instream))); break;
 					}
 
 					mareep.WriteMessage("Linking wave transferer...\n");
@@ -87,8 +87,8 @@ namespace arookas.whap {
 
 					switch (mOutputFormat) {
 						case IOFormat.Xml: chain.AppendLink(new XmlWaveBankSerializer(CreateXmlOutput(outstream))); break;
-						case IOFormat.LittleBinary: chain.AppendLink(new BinaryWaveBankSerializer(CreateLittleBinaryOutput(outstream))); break;
-						case IOFormat.BigBinary: chain.AppendLink(new BinaryWaveBankSerializer(CreateBigBinaryOutput(outstream))); break;
+						case IOFormat.LE: chain.AppendLink(new BinaryWaveBankSerializer(CreateLittleBinaryOutput(outstream))); break;
+						case IOFormat.BE: chain.AppendLink(new BinaryWaveBankSerializer(CreateBigBinaryOutput(outstream))); break;
 					}
 
 					mareep.WriteMessage("Calling transform chain...\n");

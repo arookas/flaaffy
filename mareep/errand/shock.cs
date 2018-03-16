@@ -21,15 +21,15 @@ namespace arookas.shock {
 				using (var outstream = mareep.CreateFile(mOutputFile)) {
 					switch (mInputFormat) {
 						case IOFormat.Xml: chain = new XmlBankDeserializer(CreateXmlInput(instream).Root); break;
-						case IOFormat.LittleBinary: chain = new BinaryBankDeserializer(CreateLittleBinaryInput(instream)); break;
-						case IOFormat.BigBinary: chain = new BinaryBankDeserializer(CreateBigBinaryInput(instream)); break;
+						case IOFormat.LE: chain = new BinaryBankDeserializer(CreateLittleBinaryInput(instream)); break;
+						case IOFormat.BE: chain = new BinaryBankDeserializer(CreateBigBinaryInput(instream)); break;
 						default: mareep.WriteError("SHOCK: unimplemented input format '{0}'.", mInputFormat); break;
 					}
 
 					switch (mOutputFormat) {
 						case IOFormat.Xml: chain.AppendLink(new XmlBankSerializer(CreateXmlOutput(outstream))); break;
-						case IOFormat.LittleBinary: chain.AppendLink(new BinaryBankSerializer(CreateLittleBinaryOutput(outstream))); break;
-						case IOFormat.BigBinary: chain.AppendLink(new BinaryBankSerializer(CreateBigBinaryOutput(outstream))); break;
+						case IOFormat.LE: chain.AppendLink(new BinaryBankSerializer(CreateLittleBinaryOutput(outstream))); break;
+						case IOFormat.BE: chain.AppendLink(new BinaryBankSerializer(CreateBigBinaryOutput(outstream))); break;
 						default: mareep.WriteError("SHOCK: unimplemented output format '{0}'.", mOutputFormat); break;
 					}
 
