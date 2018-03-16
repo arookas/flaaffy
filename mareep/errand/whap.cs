@@ -54,6 +54,27 @@ namespace arookas.whap {
 			mExtractWav = (mareep.GetLastCmdParam(cmdline, "-extract-wav") != null);
 		}
 
+		public override void ShowUsage() {
+			mareep.WriteMessage("USAGE: whap -input <file> <fmt> -output <file> <fmt> [...]\n");
+			mareep.WriteMessage("\n");
+			mareep.WriteMessage("FORMATS:\n");
+			mareep.WriteMessage("  xml  text-based XML format\n");
+			mareep.WriteMessage("  be   big-endian binary format\n");
+			mareep.WriteMessage("  le   little-endian binary format\n");
+			mareep.WriteMessage("\n");
+			mareep.WriteMessage("OPTIONS:\n");
+			mareep.WriteMessage("  -mix-mode <mode>\n");
+			mareep.WriteMessage("    Specifies how to mix stereo LPCM waves to mono. <mode>\n");
+			mareep.WriteMessage("    may be MIX, LEFT, or RIGHT; if omitted, defaults to MIX.\n");
+			mareep.WriteMessage("  -extract-wav\n");
+			mareep.WriteMessage("    Waves will be converted to LPCM16 .wav files upon\n");
+			mareep.WriteMessage("    export. LOSSY -- do not use if you intend to repack!\n");
+			mareep.WriteMessage("  -wave-dir <path>\n");
+			mareep.WriteMessage("    Source directory for waves. Defaults to \"waves\".\n");
+			mareep.WriteMessage("  -bank-dir <path>\n");
+			mareep.WriteMessage("    Source directory for banks. Defaults to \"banks\".\n");
+		}
+
 		public override void Perform() {
 			var chain = new Transformer<WaveBank>();
 

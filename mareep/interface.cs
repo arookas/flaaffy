@@ -25,6 +25,7 @@ namespace arookas {
 		}
 
 		public static void WriteMessage(string message) { mareep.WriteMessage("{0}", message); }
+
 		public static void WriteMessage(string format, params object[] arguments) {
 			Console.ForegroundColor = ConsoleColor.Gray;
 			Console.BackgroundColor = ConsoleColor.Black;
@@ -35,6 +36,7 @@ namespace arookas {
 		}
 
 		public static void WriteWarning(string message) { mareep.WriteWarning("{0}", message); }
+
 		public static void WriteWarning(string format, params object[] arguments) {
 			Console.ForegroundColor = ConsoleColor.Yellow;
 			Console.BackgroundColor = ConsoleColor.Black;
@@ -46,6 +48,7 @@ namespace arookas {
 		}
 
 		public static void WriteError(string message) { mareep.WriteError("{0}", message); }
+
 		public static void WriteError(string format, params object[] arguments) {
 			Console.ForegroundColor = ConsoleColor.Red;
 			Console.BackgroundColor = ConsoleColor.Black;
@@ -88,6 +91,7 @@ namespace arookas {
 				return null;
 			}
 		}
+
 		public static Stream OpenFile(string filename, bool fatal = true) {
 			if (filename == null) {
 				if (fatal) {
@@ -115,6 +119,7 @@ namespace arookas {
 		static readonly int[] srKeyBases = new int[7] {
 			0, 2, 4, 5, 7, 9, 11,
 		};
+
 		static readonly string[] srKeyLetters = new string[12] {
 			"C-", "C#", "D-", "Eb", "E-", "F-", "F#", "G-", "G#", "A-", "Bb", "B-",
 		};
@@ -166,6 +171,7 @@ namespace arookas {
 
 			return keynumber;
 		}
+
 		public static string ConvertKey(int keynumber) {
 			if (keynumber < 0 || keynumber > 127) {
 				return null;
@@ -185,6 +191,7 @@ namespace arookas {
 		public static string[] GetPathComponents(string path) {
 			return path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar, Path.VolumeSeparatorChar);
 		}
+
 		public static string GetRelativePath(string basepath, string path) {
 			const StringComparison cComparison = StringComparison.InvariantCultureIgnoreCase;
 

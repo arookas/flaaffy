@@ -65,6 +65,35 @@ namespace arookas.charge {
 			}
 		}
 
+		public void ShowUsage() {
+			mareep.WriteMessage("USAGE: charge <action> [...]\n");
+			mareep.WriteMessage("\n");
+			mareep.WriteMessage("ACTIONS:\n");
+			mareep.WriteMessage("  -extract-seq    extract sequence data\n");
+			mareep.WriteMessage("  -replace-seq    replace sequence data\n");
+			mareep.WriteMessage("  -extract-ibnk   extract bank 'IBNK' data\n");
+			mareep.WriteMessage("  -replace-ibnk   replace bank 'IBNK' data\n");
+			mareep.WriteMessage("  -extract-wsys   extract wave bank 'WSYS' data\n");
+			mareep.WriteMessage("  -replace-wsys   replace wave bank 'WSYS' data\n");
+			mareep.WriteMessage("\n");
+			mareep.WriteMessage("OPTIONS:\n");
+			mareep.WriteMessage("  -init-data-file <file> [<output>]\n");
+			mareep.WriteMessage("    Specifies the init data file (AAF). When writing,\n");
+			mareep.WriteMessage("    <output> specifies the output file name.\n");
+			mareep.WriteMessage("  -seq-data-file <file> [<output>]\n");
+			mareep.WriteMessage("    Specifies the sequence data file (ARC). When writing,\n");
+			mareep.WriteMessage("    <output> specifies the output file name.\n");
+			mareep.WriteMessage("  -input <file>\n");
+			mareep.WriteMessage("    Specifies the data with which to replace.\n");
+			mareep.WriteMessage("  -output <file>\n");
+			mareep.WriteMessage("    Specifies the file to which to extract data.\n");
+			mareep.WriteMessage("  -target <value>\n");
+			mareep.WriteMessage("    Specifies which sequence, bank, or wave bank to\n");
+			mareep.WriteMessage("    extract or replace. For sequences, may be an index,\n");
+			mareep.WriteMessage("    filename, or ASN name. For banks and wave banks, only\n");
+			mareep.WriteMessage("    indices are supported.\n");
+		}
+
 		public void Perform() {
 			mAction?.Invoke();
 		}

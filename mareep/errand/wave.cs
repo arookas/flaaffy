@@ -151,6 +151,30 @@ namespace arookas.wave {
 			}
 		}
 
+		public void ShowUsage() {
+			mareep.WriteMessage("USAGE: wave -input <file> [<fmt>] -output <file> [<fmt>] [...]\n");
+			mareep.WriteMessage("\n");
+			mareep.WriteMessage("FORMATS:\n");
+			mareep.WriteMessage("  pcm8     linear, 8-bit PCM, signed\n");
+			mareep.WriteMessage("  pcm16    linear, 16-bit PCM, signed\n");
+			mareep.WriteMessage("  adpcm2   non-linear, 2-bit ADPCM\n");
+			mareep.WriteMessage("  adpcm4   non-linear, 4-bit ADPCM\n");
+			mareep.WriteMessage("\n");
+			mareep.WriteMessage("OPTIONS:\n");
+			mareep.WriteMessage("  -sample-rate <rate>\n");
+			mareep.WriteMessage("    Specifies the sample rate (Hz) of the raw audio data.\n");
+			mareep.WriteMessage("    Used only when converting RAW > WAV.\n");
+			mareep.WriteMessage("  -frame-rate <rate>\n");
+			mareep.WriteMessage("    Specifies the frame rate of the stream; if omitted,\n");
+			mareep.WriteMessage("    defaults to 30. Ignored if not creating a stream.\n");
+			mareep.WriteMessage("  -loop <sample>\n");
+			mareep.WriteMessage("    Specifes the loop point for the stream; if omitted, the\n");
+			mareep.WriteMessage("    stream will not loop. Ignored if not creating a stream.\n");
+			mareep.WriteMessage("  -mix-mode <mode>\n");
+			mareep.WriteMessage("    Specifies how to mix stereo LPCM sounds to mono. <mode>\n");
+			mareep.WriteMessage("    may be MIX, LEFT, or RIGHT; if omitted, defaults to MIX.\n");
+		}
+
 		public void Perform() {
 			using (var instream = mareep.OpenFile(mInput)) {
 				using (var outstream = mareep.CreateFile(mOutput)) {

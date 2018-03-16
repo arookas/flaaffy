@@ -11,6 +11,15 @@ namespace arookas.shock {
 	[Errand(Errand.Shock)]
 	class ShockErrand : SimpleConverterErrand {
 
+		public override void ShowUsage() {
+			mareep.WriteMessage("USAGE: shock -input <file> <fmt> -output <file> <fmt>\n");
+			mareep.WriteMessage("\n");
+			mareep.WriteMessage("FORMATS:\n");
+			mareep.WriteMessage("  xml  text-based XML format\n");
+			mareep.WriteMessage("  be   big-endian binary format\n");
+			mareep.WriteMessage("  le   little-endian binary format\n");
+		}
+
 		public override void Perform() {
 			Transformer<InstrumentBank> chain = null;
 			mareep.WriteMessage("Opening input file '{0}'...\n", Path.GetFileName(mInputFile));

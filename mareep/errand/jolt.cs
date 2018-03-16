@@ -33,7 +33,6 @@ namespace arookas.jolt {
 		public void LoadParams(string[] arguments) {
 			var cmdline = new aCommandLine(arguments);
 			aCommandLineParameter parameter;
-
 			parameter = mareep.GetLastCmdParam(cmdline, "-input");
 
 			if (parameter == null) {
@@ -43,7 +42,6 @@ namespace arookas.jolt {
 			}
 
 			mInput = parameter[0];
-
 			parameter = mareep.GetLastCmdParam(cmdline, "-output");
 
 			if (parameter == null) {
@@ -53,20 +51,19 @@ namespace arookas.jolt {
 			}
 
 			mOutput = parameter[0];
-
 			parameter = mareep.GetLastCmdParam(cmdline, "-loop");
 
 			if (parameter != null) {
-				if (parameter.Count == 0) {
-					mLoop = 0;
-					mLoopTimeUnit = LoopTimeUnit.Pulses;
+				mLoop = 0;
+				mLoopTimeUnit = LoopTimeUnit.Pulses;
+
+				if (parameter.Count >= 1) {
+					if (!Int64.TryParse(parameter[0], NumberStyles.None, null, out mLoop)) {
+						mareep.WriteError("JOLT: bad loop value '{0}'.", parameter[0]);
+					}
 				}
 
-				if (parameter.Count > 0 && !Int64.TryParse(parameter[0], NumberStyles.None, null, out mLoop)) {
-					mareep.WriteError("JOLT: bad loop value '{0}'.", parameter[0]);
-				}
-
-				if (parameter.Count > 1) {
+				if (parameter.Count >= 2) {
 					switch (parameter[1].ToLowerInvariant()) {
 						case "pulses":
 						case "ticks": {
@@ -83,10 +80,23 @@ namespace arookas.jolt {
 							mLoopTimeUnit = LoopTimeUnit.Measures;
 							break;
 						}
-						default: mareep.WriteError("JOLT: bad time unit '{0}'.", parameter[1]); break;
+						default: {
+							mareep.WriteError("JOLT: bad time unit '{0}'.", parameter[1]);
+							break;
+						}
 					}
 				}
 			}
+		}
+
+		public void ShowUsage() {
+			mareep.WriteMessage("USAGE: jolt -input <file> -output <file> [...]\n");
+			mareep.WriteMessage("\n");
+			mareep.WriteMessage("OPTIONS:\n");
+			mareep.WriteMessage("  -loop [<amount> [<unit>]]\n");
+			mareep.WriteMessage("    Specifies the song should loop from the end. <amount>\n");
+			mareep.WriteMessage("    and <unit> specify the beginning of the loop; if omitted,\n");
+			mareep.WriteMessage("    the entire song will loop front-to-back.\n");
 		}
 
 		public void Perform() {

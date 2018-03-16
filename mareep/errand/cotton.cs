@@ -43,6 +43,15 @@ namespace arookas.cotton {
 			mEndianness = (mareep.GetLastCmdParam(cmdline, "-le") != null ? Endianness.Little : Endianness.Big);
 		}
 
+		public void ShowUsage() {
+			mareep.WriteMessage("USAGE: cotton -input <file> -output <file> [...]\n");
+			mareep.WriteMessage("\n");
+			mareep.WriteMessage("OPTIONS:\n");
+			mareep.WriteMessage("  -le\n");
+			mareep.WriteMessage("    Makes the output little-endian; if omitted, big-\n");
+			mareep.WriteMessage("    endian will be used.\n");
+		}
+
 		public void Perform() {
 			using (var instream = mareep.OpenFile(mInput)) {
 				var reader = new StreamReader(instream, Encoding.UTF8);

@@ -25,6 +25,7 @@ namespace arookas {
 	interface IErrand {
 
 		void LoadParams(string[] arguments);
+		void ShowUsage();
 		void Perform();
 
 	}
@@ -132,6 +133,7 @@ namespace arookas {
 			}
 		}
 
+		public abstract void ShowUsage();
 		public abstract void Perform();
 
 		protected static bool IsFormatBinary(IOFormat format) {
@@ -190,27 +192,16 @@ namespace arookas {
 
 	static partial class mareep {
 
-		static Errand ReadErrand(string[] arguments) {
-			var cmdline = new aCommandLine(arguments);
-
-			var parameter = mareep.GetLastCmdParam(cmdline, "-errand");
-
-			if (parameter == null) {
-				mareep.WriteError("SYSTEM: missing -errand parameter.");
-			}
-
-			if (parameter.Count == 0) {
-				mareep.WriteError("SYSTEM: missing errand name.");
-			}
-
+		static Errand ReadErrand(string argument) {
 			Errand errand;
 
-			if (!Enum.TryParse(parameter[0], true, out errand)) {
-				mareep.WriteError("SYSTEM: unknown errand '{0}'.", parameter[0]);
+			if (!Enum.TryParse(argument, true, out errand)) {
+				mareep.WriteError("SYSTEM: unknown errand '{0}'.", argument);
 			}
 
 			return errand;
 		}
+
 		static IErrand InitErrand(Errand errand) {
 			var instance = ErrandAttribute.CreateErrand(errand);
 
