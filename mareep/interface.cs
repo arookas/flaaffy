@@ -55,7 +55,6 @@ namespace arookas {
 			mareep.WriteLine();
 			Console.WriteLine(format, arguments);
 			Console.ResetColor();
-			Console.ReadKey();
 			mareep.Exit(1);
 		}
 
