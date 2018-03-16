@@ -174,6 +174,7 @@ namespace arookas.wave {
 
 			mixer.Write(mRawOutputFormat, writer);
 		}
+
 		void PerformRawToWav(Stream instream, Stream outstream) {
 			var mixer = new RawWaveMixer(instream, mRawInputFormat);
 			var writer = new aBinaryWriter(outstream, Endianness.Little);
@@ -194,6 +195,7 @@ namespace arookas.wave {
 			writer.WriteS32(dataSize);
 			mixer.Write(WaveFormat.Pcm16, writer);
 		}
+
 		void PerformWavToRaw(Stream instream, Stream outstream) {
 			var mixer = new MicrosoftWaveMixer(instream);
 			var writer = new aBinaryWriter(outstream, Endianness.Big);
@@ -201,6 +203,7 @@ namespace arookas.wave {
 			mixer.MixerMode = mMixerMode;
 			mixer.Write(mRawOutputFormat, writer);
 		}
+
 		void PerformStreamToWav(Stream instream, Stream outstream) {
 			var reader = new aBinaryReader(instream, Endianness.Big);
 			var writer = new aBinaryWriter(outstream, Endianness.Little);
@@ -233,6 +236,7 @@ namespace arookas.wave {
 				default: mareep.WriteError("AFC: Unknown format '{0}' in header.", (int)format); break;
 			}
 		}
+
 		void PerformWavToStream(Stream instream, Stream outstream) {
 			var mixer = new MicrosoftWaveMixer(instream);
 			var writer = new aBinaryWriter(outstream, Endianness.Big);
@@ -283,6 +287,7 @@ namespace arookas.wave {
 				}
 			}
 		}
+
 		static void DecodeStreamAdpcm(aBinaryReader reader, aBinaryWriter writer, int sampleCount) {
 			var left = new short[16];
 			int left_last = 0, left_penult = 0;
@@ -318,6 +323,7 @@ namespace arookas.wave {
 				}
 			}
 		}
+
 		static void EncodeStreamAdpcm(MicrosoftWaveMixer mixer, aBinaryWriter writer) {
 			var left_adpcm4 = new byte[9];
 			int left_last = 0, left_penult = 0;

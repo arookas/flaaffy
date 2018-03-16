@@ -235,10 +235,12 @@ namespace arookas.jolt {
 				ReadNoteOff(time, ev);
 			}
 		}
+
 		void ReadNoteOff(long time, EventInfo ev) {
 			mChannelTracks[ev.channel].AddNoteOff(time, ev.key);
 			mChannelOpen[ev.channel] = true;
 		}
+
 		void ReadControlChange(long time, EventInfo ev) {
 			var open = true;
 
@@ -251,6 +253,7 @@ namespace arookas.jolt {
 
 			mChannelOpen[ev.channel] |= open;
 		}
+
 		void ReadProgramChange(long time, EventInfo ev) {
 			var program = ev.program;
 			if (ev.channel == 10) {
@@ -259,10 +262,12 @@ namespace arookas.jolt {
 			mChannelTracks[ev.channel].AddEvent(time, "load rprogram, {0}b", program);
 			mChannelOpen[ev.channel] = true;
 		}
+
 		void ReadPitchWheel(long time, EventInfo ev) {
 			mChannelTracks[ev.channel].AddEvent(time, "timedparam 1, {0}h", (ev.pitch - 8192));
 			mChannelOpen[ev.channel] = true;
 		}
+
 		void ReadTempo(long time, EventInfo ev) {
 			mRootTrack.AddEvent(time, "tempo {0}h", (60000000 / ev.tempo));
 		}
@@ -300,6 +305,7 @@ namespace arookas.jolt {
 		public bool AddNoteOn(int key, int velocity) {
 			return AddNoteOn(Duration, key, velocity);
 		}
+
 		public bool AddNoteOn(long time, int key, int velocity) {
 			for (var i = 0; i < mActiveNotes.Length; ++i) {
 				if (mActiveNotes[i] < 0 || mActiveNotes[i] == key) {
@@ -310,9 +316,11 @@ namespace arookas.jolt {
 			}
 			return false;
 		}
+
 		public bool AddNoteOff(int key) {
 			return AddNoteOff(Duration, key);
 		}
+
 		public bool AddNoteOff(long time, int key) {
 			for (var i = 0; i < 7; ++i) {
 				if (mActiveNotes[i] == key) {
@@ -323,18 +331,23 @@ namespace arookas.jolt {
 			}
 			return false;
 		}
+
 		public void AddEvent(string message) {
 			AddEvent(Duration, message);
 		}
+
 		public void AddEvent(long time, string message) {
 			AddEvent(new Event(time, message));
 		}
+
 		public void AddEvent(string format, params object[] arguments) {
 			AddEvent(Duration, format, arguments);
 		}
+
 		public void AddEvent(long time, string format, params object[] arguments) {
 			AddEvent(new Event(time, format, arguments));
 		}
+
 		void AddEvent(Event ev) {
 			int i;
 			for (i = 0; i < mEvents.Count; ++i) {
@@ -353,6 +366,7 @@ namespace arookas.jolt {
 				time = ev.Time;
 			}
 		}
+
 		void WriteWait(long delta, TextWriter writer) {
 			while (delta > 0) {
 				var delay = System.Math.Min(delta, 0xFFFFFF);
@@ -375,6 +389,7 @@ namespace arookas.jolt {
 			public long Time { get { return mTime; } }
 
 			public Event(long time, string message) : this(time, "{0}", message) { }
+
 			public Event(long time, string format, params object[] arguments) {
 				mTime = time;
 				mText = String.Format(format, arguments);

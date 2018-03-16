@@ -290,6 +290,7 @@ namespace arookas {
 
 			return instrument;
 		}
+
 		DrumSet LoadDrumSet(int version) {
 			var drumset = new DrumSet();
 
@@ -366,6 +367,7 @@ namespace arookas {
 
 			return drumset;
 		}
+
 		InstrumentOscillatorInfo LoadOscillator() {
 			var oscillator = new InstrumentOscillatorInfo();
 
@@ -424,6 +426,7 @@ namespace arookas {
 
 			return oscillator;
 		}
+
 		RandomInstrumentEffect LoadRandomEffect() {
 			var target = (InstrumentEffectTarget)mReader.Read8();
 
@@ -439,6 +442,7 @@ namespace arookas {
 
 			return new RandomInstrumentEffect(target, randomBase, randomDistance);
 		}
+
 		SenseInstrumentEffect LoadSenseEffect() {
 			var target = (InstrumentEffectTarget)mReader.Read8();
 
@@ -509,6 +513,7 @@ namespace arookas {
 			mOscTableSize = mOscTable.Sum(osc => CalculateOscillatorSize(osc));
 			mBankSize = (cDataStart + mOscTableSize + mBank.Sum(instrument => CalculateInstrumentSize(instrument)));
 		}
+
 		void WriteHeader() {
 			mWriter.Write32(IBNK);
 			mWriter.Keep();
@@ -516,6 +521,7 @@ namespace arookas {
 			mWriter.WriteS32(mBank.VirtualNumber);
 			mWriter.WritePadding(32, 0);
 		}
+
 		void WriteBank() {
 			var offset = (cDataStart + mOscTableSize);
 
@@ -532,6 +538,7 @@ namespace arookas {
 
 			mWriter.WritePadding(32, 0);
 		}
+
 		void WriteOscTable() {
 			foreach (var oscillator in mOscTable) {
 				var offset = ((int)mWriter.Position + 32);
@@ -579,6 +586,7 @@ namespace arookas {
 
 			mWriter.WritePadding(32, 0);
 		}
+
 		void WriteInstruments() {
 			for (var i = 0; i < cBankCount; ++i) {
 				if (mBank[i] == null) {
@@ -606,6 +614,7 @@ namespace arookas {
 				}
 			}
 		}
+
 		void WriteMelodic(MelodicInstrument instrument) {
 			var offset = ((int)mWriter.Position + mareep.RoundUp16B(44 + 4 * instrument.Count));
 
@@ -667,6 +676,7 @@ namespace arookas {
 
 			mWriter.WritePadding(32, 0);
 		}
+
 		void WriteDrumSet(DrumSet drumset) {
 			var offset = ((int)mWriter.Position + 1056);
 
@@ -711,6 +721,7 @@ namespace arookas {
 
 			mWriter.WritePadding(32, 0);
 		}
+
 		void WriteKeyRegion(MelodicKeyRegion keyregion) {
 			var offset = ((int)mWriter.Position + mareep.RoundUp16B(8 + 4 * keyregion.Count));
 
@@ -729,6 +740,7 @@ namespace arookas {
 				WriteVelocityRegion(velregion);
 			}
 		}
+
 		void WritePercussion(Percussion percussion) {
 			var offset = ((int)mWriter.Position + mareep.RoundUp16B(20 + 4 * percussion.Count));
 
@@ -763,6 +775,7 @@ namespace arookas {
 				WriteVelocityRegion(velregion);
 			}
 		}
+
 		void WriteVelocityRegion(InstrumentVelocityRegion velregion) {
 			mWriter.Write8((byte)velregion.Velocity);
 			mWriter.WritePadding(4, 0);
@@ -770,6 +783,7 @@ namespace arookas {
 			mWriter.WriteF32(velregion.Volume);
 			mWriter.WriteF32(velregion.Pitch);
 		}
+
 		void WriteRandomEffect(RandomInstrumentEffect effect) {
 			mWriter.Write8((byte)effect.Target);
 			mWriter.WritePadding(4, 0);
@@ -777,6 +791,7 @@ namespace arookas {
 			mWriter.WriteF32(effect.RandomDistance);
 			mWriter.WritePadding(16, 0);
 		}
+
 		void WriteSenseEffect(SenseInstrumentEffect effect) {
 			mWriter.Write8((byte)effect.Target);
 			mWriter.Write8((byte)effect.Trigger);
@@ -804,15 +819,19 @@ namespace arookas {
 
 			return 0;
 		}
+
 		int CalculateKeyRegionSize(MelodicKeyRegion region) {
 			return (mareep.RoundUp16B(8 + 4 * region.Count) + (16 * region.Count));
 		}
+
 		int CalculatePercussionSize(Percussion percussion) {
 			return (mareep.RoundUp16B(20 + 4 * percussion.Count) + (16 * percussion.EffectCount) + (16 * percussion.Count));
 		}
+
 		int CalculateOscillatorSize(InstrumentOscillatorInfo oscillator) {
 			return (32 + mareep.RoundUp32B(oscillator.StartTableCount * 6) + mareep.RoundUp32B(oscillator.ReleaseTableCount * 6));
 		}
+
 		int CalculateOscillatorOffset(InstrumentOscillatorInfo oscillator) {
 			var offset = cDataStart;
 
@@ -967,6 +986,7 @@ namespace arookas {
 				bank.Add(program, instrument);
 			}
 		}
+
 		MelodicInstrument LoadMelodic(xElement xinstrument) {
 			xAttribute attribute;
 
@@ -1055,6 +1075,7 @@ namespace arookas {
 				bank.Add(program, drumset);
 			}
 		}
+
 		DrumSet LoadDrumSet(xElement xdrumset) {
 			xAttribute attribute;
 
@@ -1161,6 +1182,7 @@ namespace arookas {
 
 			return oscillator;
 		}
+
 		IEnumerable<InstrumentOscillatorTable> LoadOscillatorTable(xElement xtable) {
 			var tables = new List<InstrumentOscillatorTable>();
 
@@ -1216,6 +1238,7 @@ namespace arookas {
 
 			return null;
 		}
+
 		RandomInstrumentEffect LoadRandomEffect(xElement xeffect) {
 			var target = xeffect.Attribute(cEffectTarget).AsEnum(InstrumentEffectTarget.Volume);
 			var randomBase = (xeffect.Attribute(cEffectRandBase) | 1.0f);
@@ -1223,6 +1246,7 @@ namespace arookas {
 
 			return new RandomInstrumentEffect(target, randomBase, randomDistance);
 		}
+
 		SenseInstrumentEffect LoadSenseEffect(xElement xeffect) {
 			var target = xeffect.Attribute(cEffectTarget).AsEnum(InstrumentEffectTarget.Volume);
 			var trigger = xeffect.Attribute(cEffectSenseTrigger).AsEnum(SenseInstrumentEffectTrigger.Key);
@@ -1274,6 +1298,7 @@ namespace arookas {
 
 			mWriter.WriteEndElement();
 		}
+
 		void WriteMelodic(MelodicInstrument instrument, int program) {
 			mWriter.WriteStartElement(cInstrument);
 			mWriter.WriteAttributeString(cProgram, program);
@@ -1318,6 +1343,7 @@ namespace arookas {
 
 			mWriter.WriteEndElement();
 		}
+
 		void WriteDrumSet(DrumSet drumset, int program) {
 			mWriter.WriteStartElement(cDrumSet);
 			mWriter.WriteAttributeString(cProgram, program);
@@ -1371,6 +1397,7 @@ namespace arookas {
 
 			mWriter.WriteEndElement();
 		}
+
 		void WriteOscillator(InstrumentOscillatorInfo oscillator) {
 			mWriter.WriteStartElement(cOscillator);
 			mWriter.WriteAttributeString(cOscTarget, oscillator.Target.ToLowerString());
@@ -1400,6 +1427,7 @@ namespace arookas {
 
 			mWriter.WriteEndElement();
 		}
+
 		void WriteOscillatorTable(InstrumentOscillatorTable table) {
 			string name;
 
@@ -1432,6 +1460,7 @@ namespace arookas {
 
 			mWriter.WriteEndElement();
 		}
+
 		void WriteEffect(InstrumentEffect effect) {
 			if (effect is RandomInstrumentEffect) {
 				WriteRandomEffect(effect as RandomInstrumentEffect);
@@ -1439,6 +1468,7 @@ namespace arookas {
 				WriteSenseEffect(effect as SenseInstrumentEffect);
 			}
 		}
+
 		void WriteRandomEffect(RandomInstrumentEffect effect) {
 			mWriter.WriteStartElement(cEffectRand);
 			mWriter.WriteAttributeString(cEffectTarget, effect.Target.ToLowerString());
@@ -1446,6 +1476,7 @@ namespace arookas {
 			mWriter.WriteAttributeString(cEffectRandDistance, effect.RandomDistance);
 			mWriter.WriteEndElement();
 		}
+
 		void WriteSenseEffect(SenseInstrumentEffect effect) {
 			mWriter.WriteStartElement(cEffectSense);
 			mWriter.WriteAttributeString(cEffectTarget, effect.Target.ToLowerString());

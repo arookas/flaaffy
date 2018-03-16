@@ -94,13 +94,13 @@ namespace arookas {
 
 	abstract class BinaryWaveBankTransformer : Transformer<WaveBank> {
 
-		protected const uint WSYS = 0x57535953u;
-		protected const uint WINF = 0x57494E46u;
-		protected const uint WBCT = 0x57424354u;
-		protected const uint SCNE = 0x53434E45u;
-		protected const uint C_DF = 0x432D4446u;
-		protected const uint C_EX = 0x432D4558u;
-		protected const uint C_ST = 0x432D5354u;
+		protected const uint WSYS = 0x57535953U;
+		protected const uint WINF = 0x57494E46U;
+		protected const uint WBCT = 0x57424354U;
+		protected const uint SCNE = 0x53434E45U;
+		protected const uint C_DF = 0x432D4446U;
+		protected const uint C_EX = 0x432D4558U;
+		protected const uint C_ST = 0x432D5354U;
 
 	}
 
@@ -374,6 +374,7 @@ namespace arookas {
 
 			mWriter.PopAnchor();
 		}
+
 		void WriteWaveGroup(WaveGroup waveGroup) {
 			var offset = ((int)mWriter.Position + CalculateArchiveInfoSize(waveGroup.Count));
 
@@ -422,6 +423,7 @@ namespace arookas {
 			mWriter.WriteS32(sceneOffset + 64);
 			mWriter.WritePadding(32, 0);
 		}
+
 		void WriteWave(Wave wave) {
 			mWriter.WriteS32(wave.WaveId);
 			mWriter.Write8(0xFF); // unknown
@@ -460,15 +462,19 @@ namespace arookas {
 		int CalculateControlSize(int count) {
 			return mareep.RoundUp32B(8 + 4 * count);
 		}
+
 		int CalculateControlGroupSize(int count) {
 			return mareep.RoundUp32B(12 + 4 * count);
 		}
+
 		int CalculateWaveSize(int count) {
 			return mareep.RoundUp32B(48 * count);
 		}
+
 		int CalculateArchiveInfoSize(int count) {
 			return mareep.RoundUp32B(116 + 4 * count);
 		}
+
 		int CalculateWaveGroupSize(WaveGroup waveGroup) {
 			return (
 				CalculateArchiveInfoSize(waveGroup.Count) +
@@ -513,6 +519,7 @@ namespace arookas {
 
 			return LoadWaveBank(mRootElement);
 		}
+
 		WaveBank LoadWaveBank(xElement xwavebank) {
 			var waveBank = new WaveBank();
 
@@ -526,6 +533,7 @@ namespace arookas {
 
 			return waveBank;
 		}
+
 		WaveGroup LoadWaveGroup(xElement xwavegroup) {
 			var waveGroup = new WaveGroup();
 
@@ -548,6 +556,7 @@ namespace arookas {
 
 			return waveGroup;
 		}
+
 		Wave LoadWave(xElement xwave) {
 			xAttribute attribute;
 
@@ -681,6 +690,7 @@ namespace arookas {
 			mWriter.WriteEndElement();
 			mWriter.Flush();
 		}
+
 		void WriteWaveGroup(WaveGroup waveGroup) {
 			mWriter.WriteStartElement(cWaveGroup);
 			mWriter.WriteAttributeString(cWaveArchive, waveGroup.ArchiveFileName);
@@ -691,6 +701,7 @@ namespace arookas {
 
 			mWriter.WriteEndElement();
 		}
+
 		void WriteWave(Wave wave) {
 			mWriter.WriteStartElement(cWave);
 			mWriter.WriteAttributeString(cWaveId, wave.WaveId);
@@ -883,6 +894,7 @@ namespace arookas {
 			writer.WriteS32(dataSize);
 			mixer.Write(WaveFormat.Pcm16, writer);
 		}
+
 		void ExtractRaw(Wave wave, aBinaryReader reader, Stream outstream) {
 			reader.Goto(wave.WaveStart);
 			var data = reader.Read8s(wave.WaveSize);

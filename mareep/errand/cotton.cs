@@ -125,6 +125,7 @@ namespace arookas.cotton {
 			++LineNumber;
 			return true;
 		}
+
 		void ReadDirective(string word, string line, ref int cursor) {
 			switch (word) {
 				case ".include": ReadIncludeDirective(line, ref cursor); break;
@@ -139,6 +140,7 @@ namespace arookas.cotton {
 				default: Warning("unknown directive '{0}'.", word); break;
 			}
 		}
+
 		void ReadIncludeDirective(string line, ref int cursor) {
 			string word;
 
@@ -171,6 +173,7 @@ namespace arookas.cotton {
 				Warning("failed to open include file '{0}'.", literal);
 			}
 		}
+
 		void ReadDefineDirective(string line, ref int cursor) {
 			string name;
 
@@ -198,6 +201,7 @@ namespace arookas.cotton {
 				default: Warning("bad variable value '{0}'.", value); break;
 			}
 		}
+
 		void ReadUndefineDirective(string line, ref int cursor) {
 			string name;
 
@@ -211,6 +215,7 @@ namespace arookas.cotton {
 
 			UndefineVariable(name);
 		}
+
 		void ReadUndefineLabelDirective(string line, ref int cursor) {
 			string name;
 
@@ -224,6 +229,7 @@ namespace arookas.cotton {
 
 			UndefineLabel(name);
 		}
+
 		void ReadPodDirective(BmsArgumentType podtype, string line, ref int cursor) {
 			string pod;
 
@@ -254,6 +260,7 @@ namespace arookas.cotton {
 				Error("bad argument '{0}'.", pod);
 			}
 		}
+
 		void ReadAlignDirective(string line, ref int cursor) {
 			string word;
 
@@ -283,9 +290,11 @@ namespace arookas.cotton {
 
 			mWriter.WritePadding(alignment, 0);
 		}
+
 		void ReadCommand(string word, string line, ref int cursor) {
 			ReadCommand(word, ReadArguments(line, ref cursor));
 		}
+
 		void ReadLabelDefinition(string word, string line, ref int cursor) {
 			var symbol = word.Substring(0, (word.Length - 1)); // remove the :
 			DefineLabel(symbol);
@@ -294,6 +303,7 @@ namespace arookas.cotton {
 		bool IsRegisterName(string word) {
 			return (TryGetRegisterIndex(word) >= 0);
 		}
+
 		int GetRegisterIndex(string word) {
 			var index = TryGetRegisterIndex(word);
 
@@ -303,6 +313,7 @@ namespace arookas.cotton {
 
 			return index;
 		}
+
 		int TryGetRegisterIndex(string word) {
 			switch (word) {
 				case "rcmp": return 3;
@@ -340,6 +351,7 @@ namespace arookas.cotton {
 		bool IsConditionName(string word) {
 			return (TryGetConditionIndex(word) >= 0);
 		}
+
 		int GetConditionIndex(string word) {
 			var index = TryGetConditionIndex(word);
 
@@ -349,6 +361,7 @@ namespace arookas.cotton {
 
 			return index;
 		}
+
 		int TryGetConditionIndex(string word) {
 			switch (word) {
 				case "eq": return 1;
@@ -396,6 +409,7 @@ namespace arookas.cotton {
 			word = line.Substring(start, length);
 			return true;
 		}
+
 		BmsWordType GetWordType(string word) {
 			if (word[0] == '#') {
 				return BmsWordType.Comment;
@@ -455,13 +469,16 @@ namespace arookas.cotton {
 		public void Warning(string message) {
 			Warning("{0}", message);
 		}
+
 		public void Warning(string format, params object[] arguments) {
 			var message = String.Format(format, arguments);
 			mareep.WriteWarning("BMS: {0}: line {1}: {2}\n", Path.GetFileName(Filename), (LineNumber + 1), message);
 		}
+
 		public void Error(string message) {
 			Error("{0}", message);
 		}
+
 		public void Error(string format, params object[] arguments) {
 			var message = String.Format(format, arguments);
 			mareep.WriteError("BMS: {0}: line {1}: {2}", Path.GetFileName(Filename), (LineNumber + 1), message);
@@ -473,6 +490,7 @@ namespace arookas.cotton {
 			relocation.symbol = symbol;
 			mRelocations.Add(relocation);
 		}
+
 		public void Link() {
 			if (mRelocations.Count > 0) {
 				foreach (var relocation in mRelocations) {
@@ -500,10 +518,12 @@ namespace arookas.cotton {
 				}
 			}
 		}
+
 		public void UndefineLabel(string label) {
 			// any relocations relying on said label will already have been linked, since they're linked on definition
 			mLabels.Remove(label);
 		}
+
 		public bool IsLabelDefined(string name) {
 			return mLabels.ContainsKey(name);
 		}
@@ -511,18 +531,23 @@ namespace arookas.cotton {
 		public void DefineVariable(string name, int value) {
 			mVariables[name] = new BmsImmediate(value);
 		}
+
 		public void DefineVariable(string name, BmsArgumentType type, int value) {
 			mVariables[name] = new BmsImmediate(type, value);
 		}
+
 		public void DefineVariable(string name, BmsImmediate immediate) {
 			DefineVariable(name, immediate.Type, immediate.Value);
 		}
+
 		public void DefineVariable(string name, string input) {
 			mVariables[name] = new BmsImmediate(input);
 		}
+
 		public void UndefineVariable(string name) {
 			mVariables.Remove(name);
 		}
+
 		public bool IsVariableDefined(string name) {
 			return mVariables.ContainsKey(name);
 		}
@@ -566,6 +591,7 @@ namespace arookas.cotton {
 
 			return buffer.ToString();
 		}
+
 		char UnescapeHex(string value, int start, out int end) {
 			if (start > value.Length) {
 				Error("bad escape in string literal.");
@@ -580,6 +606,7 @@ namespace arookas.cotton {
 			end = start;
 			return (char)Int32.Parse(buffer.ToString(), NumberStyles.AllowHexSpecifier);
 		}
+
 		char UnescapeUnicodeCodeUnit(string value, int start, out int end) {
 			if (start >= (value.Length - 4)) {
 				Error("bad escape in string literal.");
@@ -587,6 +614,7 @@ namespace arookas.cotton {
 			end = start + 4;
 			return (char)Int32.Parse(value.Substring(start, 4), NumberStyles.AllowHexSpecifier);
 		}
+
 		string UnescapeUnicodeSurrogatePair(string value, int start, out int end) {
 			if (start >= value.Length - 8) {
 				Error("bad escape in string literal.");
@@ -599,6 +627,7 @@ namespace arookas.cotton {
 			end = (start + 8);
 			return String.Concat(high, low);
 		}
+
 		static bool IsHexadecimalDigit(char digit) {
 			return (
 				(digit >= '0' && digit <= '9') ||
@@ -677,9 +706,11 @@ namespace arookas.cotton {
 
 			return arguments.ToArray();
 		}
+
 		BmsImmediate ReadImmediate(string word) {
 			return new BmsImmediate(word);
 		}
+
 		BmsImmediate ReadKeyNumber(string word) {
 			var keynumber = mareep.ConvertKey(word);
 
@@ -689,9 +720,11 @@ namespace arookas.cotton {
 
 			return new BmsImmediate(BmsArgumentType.Int8, keynumber);
 		}
+
 		BmsImmediate ReadCondition(string word) {
 			return new BmsImmediate(BmsArgumentType.Int8, GetConditionIndex(word));
 		}
+
 		BmsImmediate ReadVariable(string word) {
 			if (!IsVariableDefined(word)) {
 				Error("undefined variable '{0}'.", word);
@@ -700,15 +733,18 @@ namespace arookas.cotton {
 			var variable = mVariables[word];
 			return new BmsImmediate(variable.Type, variable.Value);
 		}
+
 		BmsImmediate ReadRegisterReference(string word) {
 			var index = GetRegisterIndex(word);
 
 			return new BmsImmediate(BmsArgumentType.Int8, index);
 		}
+
 		BmsRegisterDereference ReadRegisterDereference(string word) {
 			var index = GetRegisterIndex(word.Substring(1, word.Length - 2));
 			return new BmsRegisterDereference(index);
 		}
+
 		BmsLabelReference ReadLabelReference(string word) {
 			var symbol = word.Substring(1); // remove @ symbol
 			if (IsLabelDefined(symbol)) {
@@ -716,6 +752,7 @@ namespace arookas.cotton {
 			}
 			return new BmsLabelReference(symbol);
 		}
+
 		BmsStringLiteral ReadStringLiteral(string word) {
 			var literal = UnescapeStringLiteral(word.Substring(1, (word.Length - 2)));
 			return new BmsStringLiteral(literal);
@@ -724,6 +761,7 @@ namespace arookas.cotton {
 		void EnsureArgumentCount(BmsArgument[] arguments, int count) {
 			EnsureArgumentCount(arguments, count, count);
 		}
+
 		void EnsureArgumentCount(BmsArgument[] arguments, int minimum, int maximum) {
 			if (arguments.Length < minimum) {
 				Error("not enough arguments.");
@@ -731,6 +769,7 @@ namespace arookas.cotton {
 				Error("too many arguments.");
 			}
 		}
+
 		void EnsureArgumentType(BmsArgument[] arguments, int index, params BmsArgumentType[] types) {
 			if (index < 0 || index >= arguments.Length) {
 				return;
@@ -855,6 +894,7 @@ namespace arookas.cotton {
 				default: Error("unknown command '{0}'.", command); break;
 			}
 		}
+
 		void ReadNoteOnCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 3);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -901,6 +941,7 @@ namespace arookas.cotton {
 			mWriter.Write8(flags);
 			arguments[1].Write(this, mWriter);
 		}
+
 		void ReadNoteOnZCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 3, 4);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -953,6 +994,7 @@ namespace arookas.cotton {
 				arguments[3].Write(this, mWriter);
 			}
 		}
+
 		void ReadNoteOffCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -999,6 +1041,7 @@ namespace arookas.cotton {
 				arguments[1].Write(this, mWriter);
 			}
 		}
+
 		void ReadWaitCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.Int16, BmsArgumentType.Int24, BmsArgumentType.RegisterDereference);
@@ -1018,6 +1061,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadTimedParamCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2, 3);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8);
@@ -1049,6 +1093,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadLoadCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8);
@@ -1068,6 +1113,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadAddCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8);
@@ -1086,6 +1132,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadMultiplyCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8);
@@ -1104,6 +1151,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadCompareCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8);
@@ -1122,6 +1170,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadLoadTblCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 3);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8);
@@ -1150,6 +1199,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadSubtractCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8);
@@ -1161,6 +1211,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadBitwiseCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8);
@@ -1194,6 +1245,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadOpenTrackCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1221,6 +1273,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadCallCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1, 3);
 			EnsureArgumentType(arguments, (arguments.Length - 1), BmsArgumentType.Int24, BmsArgumentType.LabelReference, BmsArgumentType.RegisterDereference);
@@ -1277,6 +1330,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadRetCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 0, 1);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1297,6 +1351,7 @@ namespace arookas.cotton {
 				arguments[0].Write(this, mWriter);
 			}
 		}
+
 		void ReadReadPortCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1316,6 +1371,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadWritePortCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1335,6 +1391,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadConnectNameCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1, 2);
 
@@ -1363,6 +1420,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadParentWritePortCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1390,6 +1448,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadSimpleAdsrCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 5);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int16, BmsArgumentType.RegisterDereference);
@@ -1412,6 +1471,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadBusConnectCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1431,6 +1491,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadSetInterruptCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1450,6 +1511,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadIntTimerCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 2);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1469,6 +1531,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadPanPowSetCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 5);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1491,6 +1554,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadIirSetCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 4);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int16, BmsArgumentType.RegisterDereference);
@@ -1512,6 +1576,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadPanSwSetCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 3);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1532,6 +1597,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadOscFullCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 3);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1552,6 +1618,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadPrintfCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1, Int32.MaxValue);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.StringLiteral);
@@ -1596,6 +1663,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadSimpleCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 0);
 
@@ -1616,6 +1684,7 @@ namespace arookas.cotton {
 
 			mWriter.Write8(opcode);
 		}
+
 		void ReadSimple8Command(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int8, BmsArgumentType.RegisterDereference);
@@ -1654,6 +1723,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadSimple16Command(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int16, BmsArgumentType.RegisterDereference);
@@ -1684,6 +1754,7 @@ namespace arookas.cotton {
 				argument.Write(this, mWriter);
 			}
 		}
+
 		void ReadSimpleOffsetCommand(string command, BmsArgument[] arguments) {
 			EnsureArgumentCount(arguments, 1);
 			EnsureArgumentType(arguments, 0, BmsArgumentType.Int24, BmsArgumentType.LabelReference, BmsArgumentType.RegisterDereference);
@@ -1752,6 +1823,7 @@ namespace arookas.cotton {
 		public void Write(BmsAssembler asm, aBinaryWriter writer) {
 			Write(asm, writer, Type);
 		}
+
 		public abstract void Write(BmsAssembler asm, aBinaryWriter writer, BmsArgumentType type);
 
 	}
@@ -1765,13 +1837,16 @@ namespace arookas.cotton {
 		public int Value { get { return mValue; } }
 
 		public BmsImmediate() : this(BmsArgumentType.Int16, 0) { }
+
 		public BmsImmediate(int value) {
 			mValue = value;
 			FindBestType(value, out mType);
 		}
+
 		public BmsImmediate(BmsArgumentType type, int value) {
 			SetValue(type, value);
 		}
+
 		public BmsImmediate(string input) {
 			ParseValue(input, out mType, out mValue);
 		}
@@ -1863,6 +1938,7 @@ namespace arookas.cotton {
 				FindBestType(value, out type);
 			}
 		}
+
 		public void SetType(BmsArgumentType type) {
 			if (type < BmsArgumentType.Int8 || type > BmsArgumentType.Int32) {
 				throw new ArgumentOutOfRangeException("type");
@@ -1870,6 +1946,7 @@ namespace arookas.cotton {
 			
 			mType = type;
 		}
+
 		public void SetValue(BmsArgumentType type, int value) {
 			if (type < BmsArgumentType.Int8 || type > BmsArgumentType.Int32) {
 				throw new ArgumentOutOfRangeException("type");
@@ -1909,6 +1986,7 @@ namespace arookas.cotton {
 			: this(symbol, 0) {
 			mRelocation = true;
 		}
+
 		public BmsLabelReference(string symbol, int offset) {
 			mSymbol = symbol;
 			mOffset = offset;
@@ -1948,7 +2026,9 @@ namespace arookas.cotton {
 		}
 
 		public BmsRegisterDereference() : this(0) { }
+
 		public BmsRegisterDereference(int index) : this(index, false) { }
+
 		public BmsRegisterDereference(int index, bool bitflag) {
 			mRegisterIndex = index;
 			mBitflag = bitflag;
@@ -1983,6 +2063,7 @@ namespace arookas.cotton {
 		public override BmsArgumentType Type { get { return BmsArgumentType.StringLiteral; } }
 
 		public BmsStringLiteral() : this("") { }
+
 		public BmsStringLiteral(string value) {
 			mValue = (value ?? "");
 		}
