@@ -11,56 +11,84 @@ namespace arookas.charge {
 	class ChargeErrand : IErrand {
 
 		Action mAction;
-
-		public ChargeErrand() {
-			mAction = null;
-		}
+		string mAafInPath, mAafOutPath;
+		string mArcInPath, mArcOutPath;
+		string mTarget;
+		string mInput;
+		string mOutput;
 
 		public void LoadParams(string[] arguments) {
 			var cmdline = new aCommandLine(arguments);
 
 			foreach (var parameter in cmdline) {
-				Entrypoint entrypoint = null;
-
 				switch (parameter.Name) {
-					case "-extract-seq":  entrypoint = DoExtractSeq;  break;
-					case "-extract-ibnk": entrypoint = DoExtractIbnk; break;
-					case "-replace-ibnk": entrypoint = DoReplaceIbnk; break;
-					case "-extract-wsys": entrypoint = DoExtractWsys; break;
-					case "-replace-wsys": entrypoint = DoReplaceWsys; break;
-				}
+					case "-extract-seq": mAction = DoExtractSeq; break;
+					case "-replace-seq": mAction = DoReplaceSeq; break;
+					case "-extract-ibnk": mAction = DoExtractIbnk; break;
+					case "-replace-ibnk": mAction = DoReplaceIbnk; break;
+					case "-extract-wsys": mAction = DoExtractWsys; break;
+					case "-replace-wsys": mAction = DoReplaceWsys; break;
+					case "-init-data-file": {
+						if (parameter.Count == 0) {
+							mareep.WriteError("CHARGE: bad -init-data-file parameter");
+						}
 
-				if (entrypoint != null) {
-					mAction = new Action(entrypoint, parameter);
+						mAafInPath = parameter[0];
+
+						if (parameter.Count > 1) {
+							mAafOutPath = parameter[1];
+						} else {
+							mAafOutPath = Path.ChangeExtension(mAafInPath, ".new.aaf");
+						}
+
+						break;
+					}
+					case "-seq-data-file": {
+						if (parameter.Count == 0) {
+							mareep.WriteError("CHARGE: bad -seq-data-file parameter");
+						}
+
+						mArcInPath = parameter[0];
+
+						if (parameter.Count > 1) {
+							mArcOutPath = parameter[1];
+						} else {
+							mArcOutPath = Path.ChangeExtension(mArcInPath, ".new.arc");
+						}
+
+						break;
+					}
+					case "-target": mTarget = parameter[0]; break;
+					case "-input": mInput = parameter[0]; break;
+					case "-output": mOutput = parameter[0]; break;
 				}
 			}
 		}
 
 		public void Perform() {
-			if (mAction != null) {
-				mAction.Call();
-			}
+			mAction?.Invoke();
 		}
 
-		void DoExtractSeq(string[] arguments) {
-			if (arguments.Length != 4) {
-				mareep.WriteError("CHARGE: bad argument count");
+		void DoExtractSeq() {
+			if (mAafInPath == null) {
+				mareep.WriteError("CHARGE: missing -init-data-file parameter");
 			}
 
-			string aaf_path = arguments[0];
-			string arc_path = arguments[1];
-			string seq_path = arguments[2];
-			string seq_name = arguments[3];
+			if (mArcInPath == null) {
+				mareep.WriteError("CHARGE: missing -seq-data-file parameter");
+			}
 
-			int seq_index = ConvertSeqNameToIndex(seq_name);
+			if (mOutput == null) {
+				mareep.WriteError("CHARGE: missing -output parameter");
+			}
 
-			if (seq_index < 0) {
-				mareep.WriteError("CHARGE: bad sequence {0}", seq_index);
+			if (mTarget == null) {
+				mareep.WriteError("CHARGE: missing -target parameter");
 			}
 
 			int offset, size;
 
-			using (Stream stream = OpenStreamRead(aaf_path)) {
+			using (Stream stream = OpenStreamRead(mAafInPath)) {
 				aBinaryReader reader = new aBinaryReader(stream, Endianness.Big);
 
 				if (!ReadAafHeader(reader, 4, 0, out offset, out size)) {
@@ -74,51 +102,147 @@ namespace arookas.charge {
 				}
 
 				reader.Goto(offset + 12);
+				int count = reader.ReadS32();
+				reader.Goto(offset + 32);
+				int index;
 
-				if (seq_index >= reader.ReadS32()) {
-					mareep.WriteError("CHARGE: bad sequence {0}", seq_index);
+				if (!ReadBarcHeader(reader, mTarget, count, out index, out offset, out size)) {
+					mareep.WriteError("CHARGE: could not find sequence {0}", mTarget);
 				}
-
-				reader.Goto(offset + 32 + (32 * seq_index) + 24);
-				offset = reader.ReadS32();
-				size = reader.ReadS32();
 			}
 
-			byte[] seq_data = null;
-
-			using (Stream stream = OpenStreamRead(arc_path)) {
+			using (Stream stream = OpenStreamRead(mArcInPath)) {
 				aBinaryReader reader = new aBinaryReader(stream);
 				reader.Goto(offset);
-				seq_data = reader.Read8s(size);
-			}
-
-			try {
-				File.WriteAllBytes(seq_path, seq_data);
-			} catch {
-				mareep.WriteError("CHARGE: failed to write output file");
+				WriteFileData(mOutput, reader.Read8s(size));
 			}
 		}
 
-		void DoExtractIbnk(string[] arguments) {
-			if (arguments.Length != 3) {
-				mareep.WriteError("CHARGE: bad argument count");
+		void DoReplaceSeq() {
+			if (mAafInPath == null) {
+				mareep.WriteError("CHARGE: missing -init-data-file parameter");
 			}
 
-			string aaf_path = arguments[0];
-			string ibnk_path = arguments[1];
-			int ibnk_index;
-
-			if (!Int32.TryParse(arguments[2], out ibnk_index)) {
-				mareep.WriteError("CHARGE: bad ibnk index {0}", arguments[2]);
+			if (mArcInPath == null) {
+				mareep.WriteError("CHARGE: missing -seq-data-file parameter");
 			}
-			
-			byte[] wsys_data;
 
-			using (Stream stream = OpenStreamRead(aaf_path)) {
+			byte[] arc_data = ReadFileData(mArcInPath);
+
+			if (mInput == null) {
+				mareep.WriteError("CHARGE: missing -input parameter");
+			}
+
+			byte[] seq_data = ReadFileData(mInput);
+
+			if (mTarget == null) {
+				mareep.WriteError("CHARGE: missing -target parameter");
+			}
+
+			byte[] barc_data = null;
+
+			using (Stream input = OpenStreamRead(mAafInPath)) {
+				aBinaryReader reader = new aBinaryReader(input, Endianness.Big);
+				int offset, size;
+
+				if (!ReadAafHeader(reader, 4, 0, out offset, out size)) {
+					mareep.WriteError("CHARGE: failed to find sequence info block");
+				}
+
+				reader.Goto(offset);
+
+				if (reader.ReadS32() != 0x42415243) { // 'BARC'
+					mareep.WriteError("CHARGE: could not find 'BARC' header");
+				}
+
+				reader.Goto(offset + 12);
+				int count = reader.ReadS32();
+				barc_data = new byte[32 + 32 * count];
+
+				reader.Goto(offset + 32);
+				int index, old_offset, old_size;
+
+				if (!ReadBarcHeader(reader, mTarget, count, out index, out old_offset, out old_size)) {
+					mareep.WriteError("CHARGE: could not find sequence {0}", mTarget);
+				}
+
+				int new_size = ((seq_data.Length + 31) & ~31);
+				int difference = (new_size - old_size);
+				reader.Goto(offset + 16);
+
+				using (Stream arc_stream = OpenStreamWrite(mArcOutPath))
+				using (MemoryStream barc_stream = new MemoryStream(barc_data, true)) {
+					aBinaryWriter arc_writer = new aBinaryWriter(arc_stream);
+					aBinaryWriter barc_writer = new aBinaryWriter(barc_stream, Endianness.Big);
+					barc_writer.WriteS32(0x42415243); // 'BARC'
+					barc_writer.WriteS32(0x2D2D2D2D); // '----'
+					barc_writer.WriteS32(0);
+					barc_writer.WriteS32(count);
+					barc_writer.Write8s(reader.Read8s(16));
+
+					for (int i = 0; i < count; ++i) {
+						barc_writer.Write8s(reader.Read8s(14));
+						barc_writer.WriteS16(reader.ReadS16());
+						barc_writer.WriteS32(reader.ReadS32());
+						barc_writer.WriteS32(reader.ReadS32());
+						offset = reader.ReadS32();
+						size = reader.ReadS32();
+
+						if (offset > old_offset) {
+							offset += difference;
+						}
+
+						arc_writer.Goto(offset);
+
+						if (i == index) {
+							arc_writer.Write8s(seq_data);
+							arc_writer.WritePadding(32, 0);
+							size = new_size;
+						} else {
+							arc_writer.Write8s(arc_data, offset, size);
+						}
+
+						barc_writer.WriteS32(offset);
+						barc_writer.WriteS32(size);
+					}
+				}
+
+				reader.Goto(0);
+
+				using (Stream output = OpenStreamWrite(mAafOutPath)) {
+					aBinaryWriter writer = new aBinaryWriter(output, Endianness.Big);
+
+					if (!WriteAafHeader(reader, writer, 4, 0, barc_data)) {
+						mareep.WriteError("CHARGE: failed to write aaf file");
+					}
+				}
+			}
+		}
+
+		void DoExtractIbnk() {
+			if (mAafInPath == null) {
+				mareep.WriteError("CHARGE: missing -init-data-file parameter");
+			}
+
+			if (mOutput == null) {
+				mareep.WriteError("CHARGE: missing -output parameter");
+			}
+
+			if (mTarget == null) {
+				mareep.WriteError("CHARGE: missing -target parameter");
+			}
+
+			int index;
+
+			if (!Int32.TryParse(mTarget, out index)) {
+				mareep.WriteError("CHARGE: bad target {0}", mTarget);
+			}
+
+			using (Stream stream = OpenStreamRead(mAafInPath)) {
 				aBinaryReader reader = new aBinaryReader(stream, Endianness.Big);
 				int offset, size;
 
-				if (!ReadAafHeader(reader, 2, ibnk_index, out offset, out size)) {
+				if (!ReadAafHeader(reader, 2, index, out offset, out size)) {
 					mareep.WriteError("CHARGE: failed to find bank block\n");
 				}
 
@@ -129,84 +253,66 @@ namespace arookas.charge {
 				}
 
 				reader.Goto(offset);
-				wsys_data = reader.Read8s(size);
-			}
-
-			try {
-				File.WriteAllBytes(ibnk_path, wsys_data);
-			} catch {
-				mareep.WriteError("CHARGE: failed to write output file");
+				WriteFileData(mOutput, reader.Read8s(size));
 			}
 		}
 
-		void DoReplaceIbnk(string[] arguments) {
-			if (arguments.Length != 3) {
-				mareep.WriteError("CHARGE: bad argument count");
+		void DoReplaceIbnk() {
+			if (mAafInPath == null) {
+				mareep.WriteError("CHARGE: missing -init-data-file parameter");
 			}
 
-			string aaf_path = arguments[0];
-			string ibnk_path = arguments[1];
-			int ibnk_index;
-
-			if (!Int32.TryParse(arguments[2], out ibnk_index)) {
-				mareep.WriteError("CHARGE: bad ibnk index {0}", arguments[2]);
+			if (mInput == null) {
+				mareep.WriteError("CHARGE: missing -input parameter");
 			}
 
-			byte[] ibnk_data = null;
+			byte[] data = ReadFileData(mInput);
 
-			try {
-				ibnk_data = File.ReadAllBytes(ibnk_path);
-			} catch {
-				mareep.WriteError("CHARGE: failed to read ibnk file");
+			if (mTarget == null) {
+				mareep.WriteError("CHARGE: missing -target parameter");
 			}
 
-			byte[] aaf_data = null;
+			int index;
 
-			try {
-				aaf_data = File.ReadAllBytes(aaf_path);
-			} catch {
-				mareep.WriteError("CHARGE: failed to read aaf file");
+			if (!Int32.TryParse(mTarget, out index)) {
+				mareep.WriteError("CHARGE: bad ibnk index {0}", mTarget);
 			}
 
-			Stream out_stream = null;
+			using (Stream input = OpenStreamRead(mAafInPath))
+			using (Stream output = OpenStreamWrite(mAafOutPath)) {
+				aBinaryReader reader = new aBinaryReader(input, Endianness.Big);
+				aBinaryWriter writer = new aBinaryWriter(output, Endianness.Big);
 
-			try {
-				out_stream = OpenStreamWrite(aaf_path);
-			} catch {
-				mareep.WriteError("CHARGE: failed to create aaf file");
-			}
-
-			using (out_stream)
-			using (MemoryStream in_stream = new MemoryStream(aaf_data)) {
-				aBinaryReader reader = new aBinaryReader(in_stream, Endianness.Big);
-				aBinaryWriter writer = new aBinaryWriter(out_stream, Endianness.Big);
-
-				if (!WriteAafHeader(reader, writer, 2, ibnk_index, ibnk_data)) {
+				if (!WriteAafHeader(reader, writer, 2, index, data)) {
 					mareep.WriteError("CHARGE: failed to write aaf file");
 				}
 			}
 		}
 
-		void DoExtractWsys(string[] arguments) {
-			if (arguments.Length != 3) {
-				mareep.WriteError("CHARGE: bad argument count");
+		void DoExtractWsys() {
+			if (mAafInPath == null) {
+				mareep.WriteError("CHARGE: missing -init-data-file parameter");
 			}
 
-			string aaf_path = arguments[0];
-			string wsys_path = arguments[1];
-			int wsys_index;
-
-			if (!Int32.TryParse(arguments[2], out wsys_index)) {
-				mareep.WriteError("CHARGE: bad wsys index {0}", arguments[2]);
+			if (mOutput == null) {
+				mareep.WriteError("CHARGE: missing -output parameter");
 			}
-			
-			byte[] wsys_data;
 
-			using (Stream stream = OpenStreamRead(aaf_path)) {
+			if (mTarget == null) {
+				mareep.WriteError("CHARGE: missing -target parameter");
+			}
+
+			int index;
+
+			if (!Int32.TryParse(mTarget, out index)) {
+				mareep.WriteError("CHARGE: bad target {0}", mTarget);
+			}
+
+			using (Stream stream = OpenStreamRead(mAafInPath)) {
 				aBinaryReader reader = new aBinaryReader(stream, Endianness.Big);
 				int offset, size;
 
-				if (!ReadAafHeader(reader, 3, wsys_index, out offset, out size)) {
+				if (!ReadAafHeader(reader, 3, index, out offset, out size)) {
 					mareep.WriteError("CHARGE: failed to find wave bank block\n");
 				}
 
@@ -217,82 +323,41 @@ namespace arookas.charge {
 				}
 
 				reader.Goto(offset);
-				wsys_data = reader.Read8s(size);
-			}
-
-			try {
-				File.WriteAllBytes(wsys_path, wsys_data);
-			} catch {
-				mareep.WriteError("CHARGE: failed to write output file");
+				WriteFileData(mOutput, reader.Read8s(size));
 			}
 		}
 
-		void DoReplaceWsys(string[] arguments) {
-			if (arguments.Length != 3) {
-				mareep.WriteError("CHARGE: bad argument count");
+		void DoReplaceWsys() {
+			if (mAafInPath == null) {
+				mareep.WriteError("CHARGE: missing -init-data-file parameter");
 			}
 
-			string aaf_path = arguments[0];
-			string wsys_path = arguments[1];
-			int wsys_index;
-
-			if (!Int32.TryParse(arguments[2], out wsys_index)) {
-				mareep.WriteError("CHARGE: bad wsys index {0}", arguments[2]);
+			if (mInput == null) {
+				mareep.WriteError("CHARGE: missing -input parameter");
 			}
 
-			byte[] wsys_data = null;
+			byte[] data = ReadFileData(mInput);
 
-			try {
-				wsys_data = File.ReadAllBytes(wsys_path);
-			} catch {
-				mareep.WriteError("CHARGE: failed to read wsys file");
+			if (mTarget == null) {
+				mareep.WriteError("CHARGE: missing -target parameter");
 			}
 
-			byte[] aaf_data = null;
+			int index;
 
-			try {
-				aaf_data = File.ReadAllBytes(aaf_path);
-			} catch {
-				mareep.WriteError("CHARGE: failed to read aaf file");
+			if (!Int32.TryParse(mTarget, out index)) {
+				mareep.WriteError("CHARGE: bad wsys index {0}", mTarget);
 			}
 
-			Stream out_stream = null;
+			using (Stream input = OpenStreamRead(mAafInPath))
+			using (Stream output = OpenStreamWrite(mAafOutPath)) {
+				aBinaryReader reader = new aBinaryReader(input, Endianness.Big);
+				aBinaryWriter writer = new aBinaryWriter(output, Endianness.Big);
 
-			try {
-				out_stream = OpenStreamWrite(aaf_path);
-			} catch {
-				mareep.WriteError("CHARGE: failed to create aaf file");
-			}
-
-			using (out_stream)
-			using (MemoryStream in_stream = new MemoryStream(aaf_data)) {
-				aBinaryReader reader = new aBinaryReader(in_stream, Endianness.Big);
-				aBinaryWriter writer = new aBinaryWriter(out_stream, Endianness.Big);
-
-				if (!WriteAafHeader(reader, writer, 3, wsys_index, wsys_data)) {
+				if (!WriteAafHeader(reader, writer, 3, index, data)) {
 					mareep.WriteError("CHARGE: failed to write aaf file");
 				}
 			}
 		}
-
-		static string[] sSeqNames = {
-			"se.scom", "k_dolpic.com", "k_bianco.com",
-			"k_manma.com", "t_pinnapaco_s", "t_pinnapaco.c",
-			"t_mare_sea.co", "t_montevillag", "t_shilena.com",
-			"k_rico.com", "k_clear.com", "t_chuboss.com",
-			"k_miss.com", "t_boss.com", "t_select.com",
-			"t_bosspakkun_", "k_title.com", "t_chuboss2.co",
-			"k_ex.com", "t_delfino.com", "t_marevillage",
-			"t_corona.com", "k_kagemario.c", "k_camera.com",
-			"t_montevillag", "t_mechakuppa_", "k_airport.com",
-			"k_chika.com", "k_titleback.c", "t_montevillag",
-			"t_delfino_kaj", "t_event.com", "t_timelimit.c",
-			"t_extra_skyan", "t_montevillag", "t_pinnapaco_m",
-			"k_select.com", "t_casino_fanf", "t_race_fanfar",
-			"k_camerakage.", "k_gameover.co", "t_boss_hanach",
-			"t_boss_geso_i", "t_chuboss_man", "t_montevillage",
-			"t_shine_appea", "k_kuppa.com", "t_monteman_ra",
-		};
 
 		static string[] sAsnNames = {
 			"MSD_SE_SEQ", "MSD_BGM_DOLPIC", "MSD_BGM_BIANCO",
@@ -324,37 +389,36 @@ namespace arookas.charge {
 				}
 			}
 
-			for (int i = 0; i < sSeqNames.Length; ++i) {
-				if (sSeqNames[i].Equals(name, StringComparison.InvariantCultureIgnoreCase)) {
-					return i;
-				}
-			}
-
 			return -1;
 		}
 
 		static bool ReadAafHeader(aBinaryReader reader, int id, int index, out int offset, out int size) {
+			int section;
 			offset = 0;
 			size = 0;
 
-			int section;
-
 			while ((section = reader.ReadS32()) != 0) {
-				bool has_vnum = (section == 2 || section == 3);
-				int i = 0;
-
-				while ((offset = reader.ReadS32()) != 0) {
-					size = reader.ReadS32();
-
-					if (has_vnum) {
+				if (section == 2 || section == 3) {
+					for (int i = 0; (offset = reader.ReadS32()) != 0; ++i) {
+						size = reader.ReadS32();
 						reader.Step(4);
-					}
 
-					if (section == id && i == index) {
+						if (section == id && i == index) {
+							return true;
+						}
+					}
+				} else {
+					offset = reader.ReadS32();
+					size = reader.ReadS32();
+					reader.Step(4);
+
+					if (section == id && index == 0) {
 						return true;
 					}
+				}
 
-					++i;
+				if (section == id) {
+					break;
 				}
 			}
 
@@ -416,12 +480,72 @@ namespace arookas.charge {
 			}
 
 			writer.WriteS32(0);
-
+			writer.Goto(writer.Length);
+			writer.WritePadding(32, 0);
 			return true;
 		}
 
-		static byte[] WriteBarcHeader(aBinaryReader aaf,  aBinaryWriter barc, int seq_index) {
+		static bool ReadBarcHeader(aBinaryReader reader, string seq, int count, out int index, out int offset, out int size) {
+			index = ConvertSeqNameToIndex(seq);
+			long start = reader.Position;
+			offset = 0;
+			size = 0;
+
+			if (index > 0) {
+				if (index >= count) {
+					return false;
+				}
+
+				reader.Goto(start + 32 * index + 24);
+				offset = reader.ReadS32();
+				size = reader.ReadS32();
+				return true;
+			}
+
+			for (int i = 0; i < count; ++i) {
+				reader.Goto(start + 32 * i);
+				string name = reader.ReadString<aZSTR>();
+
+				if (name.Equals(seq, StringComparison.InvariantCultureIgnoreCase)) {
+					reader.Goto(start + 32 * i + 24);
+					offset = reader.ReadS32();
+					size = reader.ReadS32();
+					index = i;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		static void MissingInitDataFile() {
+			mareep.WriteError("CHARGE: missing -init-data-file parameter");
+		}
+
+		static void MissingSeqDataFile() {
+			mareep.WriteError("CHARGE: missing -seq-data-file parameter");
+		}
+
+		static void MissingTarget() {
+			mareep.WriteError("CHARGE: missing -target parameter");
+		}
+
+		static byte[] ReadFileData(string path) {
+			try {
+				return File.ReadAllBytes(path);
+			} catch {
+				mareep.WriteError("CHARGE: failed to read file {0}", path);
+			}
+
 			return null;
+		}
+
+		static void WriteFileData(string path, byte[] data) {
+			try {
+				File.WriteAllBytes(path, data);
+			} catch {
+				mareep.WriteError("CHARGE: failed to write file {0}", path);
+			}
 		}
 
 		static Stream OpenStreamRead(string path) {
@@ -446,24 +570,6 @@ namespace arookas.charge {
 			}
 
 			return stream;
-		}
-
-		delegate void Entrypoint(string[] arguments);
-
-		class Action {
-
-			Entrypoint Entrypoint { get; set; }
-			string[] Arguments { get; set; }
-
-			public Action(Entrypoint entrypoint, aCommandLineParameter parameter) {
-				Entrypoint = entrypoint;
-				Arguments = parameter.ToArray();
-			}
-
-			public void Call() {
-				Entrypoint(Arguments);
-			}
-
 		}
 
 	}
