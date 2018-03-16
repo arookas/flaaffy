@@ -88,7 +88,7 @@ namespace arookas.charge {
 
 			int offset, size;
 
-			using (Stream stream = OpenStreamRead(mAafInPath)) {
+			using (Stream stream = mareep.OpenFile(mAafInPath)) {
 				aBinaryReader reader = new aBinaryReader(stream, Endianness.Big);
 
 				if (!ReadAafHeader(reader, 4, 0, out offset, out size)) {
@@ -111,7 +111,7 @@ namespace arookas.charge {
 				}
 			}
 
-			using (Stream stream = OpenStreamRead(mArcInPath)) {
+			using (Stream stream = mareep.OpenFile(mArcInPath)) {
 				aBinaryReader reader = new aBinaryReader(stream);
 				reader.Goto(offset);
 				WriteFileData(mOutput, reader.Read8s(size));
@@ -141,7 +141,7 @@ namespace arookas.charge {
 
 			byte[] barc_data = null;
 
-			using (Stream input = OpenStreamRead(mAafInPath)) {
+			using (Stream input = mareep.OpenFile(mAafInPath)) {
 				aBinaryReader reader = new aBinaryReader(input, Endianness.Big);
 				int offset, size;
 
@@ -170,7 +170,7 @@ namespace arookas.charge {
 				int difference = (new_size - old_size);
 				reader.Goto(offset + 16);
 
-				using (Stream arc_stream = OpenStreamWrite(mArcOutPath))
+				using (Stream arc_stream = mareep.CreateFile(mArcOutPath))
 				using (MemoryStream barc_stream = new MemoryStream(barc_data, true)) {
 					aBinaryWriter arc_writer = new aBinaryWriter(arc_stream);
 					aBinaryWriter barc_writer = new aBinaryWriter(barc_stream, Endianness.Big);
@@ -209,7 +209,7 @@ namespace arookas.charge {
 
 				reader.Goto(0);
 
-				using (Stream output = OpenStreamWrite(mAafOutPath)) {
+				using (Stream output = mareep.CreateFile(mAafOutPath)) {
 					aBinaryWriter writer = new aBinaryWriter(output, Endianness.Big);
 
 					if (!WriteAafHeader(reader, writer, 4, 0, barc_data)) {
@@ -238,7 +238,7 @@ namespace arookas.charge {
 				mareep.WriteError("CHARGE: bad target {0}", mTarget);
 			}
 
-			using (Stream stream = OpenStreamRead(mAafInPath)) {
+			using (Stream stream = mareep.OpenFile(mAafInPath)) {
 				aBinaryReader reader = new aBinaryReader(stream, Endianness.Big);
 				int offset, size;
 
@@ -278,8 +278,8 @@ namespace arookas.charge {
 				mareep.WriteError("CHARGE: bad ibnk index {0}", mTarget);
 			}
 
-			using (Stream input = OpenStreamRead(mAafInPath))
-			using (Stream output = OpenStreamWrite(mAafOutPath)) {
+			using (Stream input = mareep.OpenFile(mAafInPath))
+			using (Stream output = mareep.CreateFile(mAafOutPath)) {
 				aBinaryReader reader = new aBinaryReader(input, Endianness.Big);
 				aBinaryWriter writer = new aBinaryWriter(output, Endianness.Big);
 
@@ -308,7 +308,7 @@ namespace arookas.charge {
 				mareep.WriteError("CHARGE: bad target {0}", mTarget);
 			}
 
-			using (Stream stream = OpenStreamRead(mAafInPath)) {
+			using (Stream stream = mareep.OpenFile(mAafInPath)) {
 				aBinaryReader reader = new aBinaryReader(stream, Endianness.Big);
 				int offset, size;
 
@@ -348,8 +348,8 @@ namespace arookas.charge {
 				mareep.WriteError("CHARGE: bad wsys index {0}", mTarget);
 			}
 
-			using (Stream input = OpenStreamRead(mAafInPath))
-			using (Stream output = OpenStreamWrite(mAafOutPath)) {
+			using (Stream input = mareep.OpenFile(mAafInPath))
+			using (Stream output = mareep.CreateFile(mAafOutPath)) {
 				aBinaryReader reader = new aBinaryReader(input, Endianness.Big);
 				aBinaryWriter writer = new aBinaryWriter(output, Endianness.Big);
 
@@ -546,30 +546,6 @@ namespace arookas.charge {
 			} catch {
 				mareep.WriteError("CHARGE: failed to write file {0}", path);
 			}
-		}
-
-		static Stream OpenStreamRead(string path) {
-			Stream stream = null;
-
-			try {
-				stream = File.OpenRead(path);
-			} catch {
-				mareep.WriteError("CHARGE: failed to open file {0}", path);
-			}
-
-			return stream;
-		}
-
-		static Stream OpenStreamWrite(string path) {
-			Stream stream = null;
-
-			try {
-				stream = File.Create(path);
-			} catch {
-				mareep.WriteError("CHARGE: failed to create file {0}", path);
-			}
-
-			return stream;
 		}
 
 	}
