@@ -4,7 +4,8 @@
 ### Summary
 
 _flaaffy_ is a simple audio toolchain for Super Mario Sunshine.
-At its core, it is a runtime library for loading, utilizing, and playing the various audio-related formats of the game. There are also a series of tools and utilities to convert and create these formats.
+At its core, it is a runtime library for loading, utilizing, and playing the various audio-related formats of the game.
+There are also a series of tools and utilities to convert and create these formats.
 
 ### Compiling
 
@@ -28,15 +29,17 @@ It is a command-line interface, where each feature is implemented as an "errand"
 The arguments follow this format:
 
 ```
-mareep -errand <name> [<arguments>]
+mareep [-help] -errand <errand> [...]
 ```
 
+You may specify the `-help` parameter to show brief documentation for a given errand.
 The available errands are as follows:
 
-|Errands|Description|
+|Errand|Description|
 |-------|-----------|
-|[shock](shock.md)|Converts instrument banks ("IBNK" or "bnk") to&#8209;and&#8209;fro XML and binary formats. Little endian and big endian are supported.|
-|[whap](whap.md)|Converts wave banks ("WSYS" or "ws") to&#8209;and&#8209;fro XML and binary formats. Little endian and big endian are supported. Automatically extracts and repacks the wave archives (.aw files). Includes PCM&nbsp;⇄&nbsp;ADPCM conversion.|
+|[shock](shock.md)|Converts banks ("IBNK" or "bnk") to&#8209;and&#8209;fro XML and binary formats. Little&#8209;endian and big&#8209;endian are supported.|
+|[whap](whap.md)|Converts wave banks ("WSYS" or "ws") to&#8209;and&#8209;fro XML and binary formats. Little&#8209;endian and big&#8209;endian are supported. Automatically extracts and repacks wave archives (.aw files). Includes PCM&nbsp;⇄&nbsp;ADPCM conversion.|
 |[wave](wave.md)|Standalone errand to convert audio data between formats. Various raw and standard formats are supported.|
 |[cotton](cotton.md)|A dedicated BMS assembler. Able to compile BMS files from no&#8209;holds&#8209;barred assembly text. Features relocation, named labels, variables, embedded POD, and various other directives.|
 |[jolt](jolt.md)|Converts basic MIDI files to the cotton assembler language. Used to create custom music.|
+|[charge](charge.md)|Basic utility to extract and replace data (sequences, banks, and wave banks) inside an AAF file.|

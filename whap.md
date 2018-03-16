@@ -11,9 +11,10 @@ The arguments are as follows:
 |---------|-----------|
 |-input _&lt;file&gt;_ _&lt;format&gt;_|Specifies the path and filename to the input file. _&lt;format&gt;_ may be one of the values listed below.|
 |-output _&lt;file&gt;_ _&lt;format&gt;_|Specifies the path and filename to the output file. _&lt;format&gt;_ may be one of the values listed below.|
-|-wave-dir _&lt;dir&gt;_|Used only during binary&nbsp;⇒&nbsp;XML conversion. Optional setting to specify the path, relative to the output file, in which to export all of the waves. Defaults to a directory named _waves/_.|
+|-bank-dir _&lt;dir&gt;_|Used only when converting between binary and XML. Specifies the path, either absolute or relative to the output file, in which to import/export the banks. Defaults to a directory named _banks/_.|
+|-wave-dir _&lt;dir&gt;_|Used only when converting between binary and XML. Specifies the path, either absolute or relative to the output file, in which to import/export the waves. Defaults to a directory named _waves/_.|
 |-mix-mode _&lt;mode&gt;_|Specifies how to mix stereo waves when creating a wave archive. Available modes are listed below. If not specified, _mix_ will be used.|
-|-extract-wav|Used only during binary&nbsp;⇒&nbsp;XML conversion. Optional setting to extract all sounds to 16-bit mono LPCM .wav files.|
+|-extract-wav|Used only when converting binary to XML. Extracts all sounds to 16-bit mono LPCM .wav files.|
 
 > **Note**: do _not_ use `-extract-wav` if you intend on repacking the wave archives. ADPCM encoding is lossy and sounds will suffer noticable deterioration through repeated decoding and encoding.
 
