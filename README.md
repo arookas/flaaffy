@@ -1,5 +1,5 @@
 
-## flaaffy v.0.6.0
+## flaaffy v.0.6.1
 
 ### Summary
 
