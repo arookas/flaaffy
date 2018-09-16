@@ -490,25 +490,36 @@ namespace arookas.charge {
 			}
 
 			int difference = (data.Length - old_size);
+			mareep.WriteMessage("Entry size difference: {0} byte(s)\n", difference);
+			int danger_level = 0;
 
 			reader.Goto(reader_base);
 			int section;
 
 			while ((section = reader.ReadS32()) != 0) {
+				if (danger_level++ > 1000) {
+					mareep.WriteError("CHARGE: malformed AAF file (endless loop detected)");
+				}
+
 				bool has_vnum = (section == 2 || section == 3);
 				writer.WriteS32(section);
 				int offset, size;
 				int i = 0;
 
 				while ((offset = reader.ReadS32()) != 0) {
-					size = reader.ReadS32();
+					if (danger_level++ > 1000) {
+						mareep.WriteError("CHARGE: malformed AAF file (endless loop detected)");
+					}
 
-					if (offset > old_offset) {
-						offset += difference;
+					size = reader.ReadS32();
+					int new_offset = offset;
+
+					if (new_offset > old_offset) {
+						new_offset += difference;
 					}
 
 					writer.Keep();
-					writer.Goto(writer_base + offset);
+					writer.Goto(writer_base + new_offset);
 
 					if (section == id && i == index) {
 						writer.Write8s(data);
@@ -521,7 +532,7 @@ namespace arookas.charge {
 					}
 
 					writer.Back();
-					writer.WriteS32(offset);
+					writer.WriteS32(new_offset);
 					writer.WriteS32(size);
 
 					if (has_vnum) {
