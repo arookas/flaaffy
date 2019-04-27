@@ -12,7 +12,7 @@ The first argument specifies the action to perform:
 |-extract-seq|Extracts the data of a BMS sequence.|
 |-replace-seq|Replaces the data for a BMS sequence.|
 |-extract-ibnk|Extracts the data of a bank.|
-|-extract-ibnk|Replaces the data for a bank.|
+|-replace-ibnk|Replaces the data for a bank.|
 |-extract-wsys|Extracts the data of a wave bank.|
 |-replace-wsys|Replaces the data of a wave bank.|
 
